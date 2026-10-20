@@ -15,6 +15,7 @@ export const baseConfig: Config = {
   port: 0, host: '127.0.0.1', dataDir: '/nonexistent', staticDir: '/nonexistent', devOpenAccess: false,
   source: 'fixture', fixtureFile: new URL('../fixtures/familie-muster.json', import.meta.url).pathname,
   gramps: { url: '', user: '', password: '' }, cacheTtl: 900, livingYears: 100,
+  grampsEditUrl: 'https://gramps.example', adminDevLogin: false,
 }
 
 export function testApp(overrides: Partial<Config> = {}) {

@@ -1,0 +1,54 @@
+.admin-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+}
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 36px;
+  padding: 0 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+  color: var(--text);
+  text-decoration: none;
+  cursor: pointer;
+  font-size: 14px;
+  white-space: nowrap;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
+.btn.danger { color: #b3261e; }
+.btn:disabled { opacity: 0.5; cursor: default; }
+.field { display: grid; gap: 4px; }
+.field > span { font-size: 13px; color: var(--muted); }
+.field input, .field select, .field textarea {
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg);
+}
+.badge {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 600;
+  background: var(--bg);
+  color: var(--muted);
+}
+.badge.active { background: #d7f0dd; color: #1d6b34; }
+.badge.expired { background: #f6e7c8; color: #7a5208; }
+.badge.revoked { background: #f6d6d3; color: #8c1d18; }
+@media (prefers-color-scheme: dark) {
+  .badge.active { background: #1f3d29; color: #8fd8a5; }
+  .badge.expired { background: #43361b; color: #f0c674; }
+  .badge.revoked { background: #47201e; color: #f2a29c; }
+  .btn.danger { color: #f2a29c; }
+}
+.notice { padding: 10px 14px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
+.notice.error { border-color: #b3261e; }

@@ -96,3 +96,15 @@ export interface ShareLinkInput {
   /** ISO-Zeitpunkt oder null für unbegrenzt */
   expiresAt: string | null
 }
+
+export interface AdminInfo {
+  name: string
+  grampsEditUrl: string
+  publicUrl: string
+}
+
+export interface AdminStatus {
+  loadedAt: string | null
+  people: number
+  error: string | null
+}

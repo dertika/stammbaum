@@ -48,6 +48,18 @@ export interface Config {
   rootPerson?: string
   /** Ohne Todesangabe gilt als lebend, wer jünger als so viele Jahre ist */
   livingYears: number
+  /** Ziel des Buttons „Stammbaum bearbeiten“ */
+  grampsEditUrl: string
+  /** OIDC-Anmeldung für /admin (Authelia); fehlt sie, ist der Admin-Bereich gesperrt */
+  oidc?: {
+    issuer: string
+    clientId: string
+    clientSecret: string
+    /** Optional: nur Mitglieder dieser Gruppe dürfen in den Admin-Bereich */
+    adminGroup?: string
+  }
+  /** Nur lokal: Admin-Bereich ohne OIDC (erfordert DEV_OPEN_ACCESS) */
+  adminDevLogin: boolean
 }
 
 export function loadConfig(): Config {
@@ -73,5 +85,15 @@ export function loadConfig(): Config {
     cacheTtl: int('CACHE_TTL', 900),
     rootPerson: env('ROOT_PERSON'),
     livingYears: int('LIVING_YEARS', 100),
+    grampsEditUrl: env('GRAMPS_EDIT_URL', 'https://stammbaum-admin.dertika.de')!,
+    oidc: env('OIDC_ISSUER')
+      ? {
+          issuer: required('OIDC_ISSUER'),
+          clientId: required('OIDC_CLIENT_ID'),
+          clientSecret: required('OIDC_CLIENT_SECRET'),
+          adminGroup: env('OIDC_ADMIN_GROUP'),
+        }
+      : undefined,
+    adminDevLogin: env('DEV_OPEN_ACCESS') === '1' && env('ADMIN_DEV_LOGIN') === '1',
   }
 }

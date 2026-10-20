@@ -1,0 +1,9 @@
+**/node_modules
+**/dist
+data
+.git
+.github
+deploy
+*.md
+backend/test
+backend/fixtures

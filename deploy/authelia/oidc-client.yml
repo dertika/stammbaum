@@ -1,0 +1,31 @@
+# Ausschnitt für die Authelia-Konfiguration (configuration.yml)
+# Client-Secret erzeugen:
+#   podman run --rm docker.io/authelia/authelia:latest authelia crypto hash generate pbkdf2 --variant sha512 --random --random.length 72 --random.charset rfc3986
+# Den Klartext als Podman-Secret stammbaum_oidc_client_secret hinterlegen, den Hash hier eintragen.
+
+identity_providers:
+  oidc:
+    clients:
+      - client_id: 'stammbaum'
+        client_name: 'Stammbaum'
+        client_secret: '$pbkdf2-sha512$310000$…'   # Hash, nicht der Klartext
+        public: false
+        authorization_policy: 'two_factor'
+        consent_mode: 'implicit'
+        require_pkce: true
+        pkce_challenge_method: 'S256'
+        redirect_uris:
+          - 'https://stammbaum.dertika.de/auth/callback'
+        scopes:
+          - 'openid'
+          - 'profile'
+          - 'groups'
+        response_types:
+          - 'code'
+        grant_types:
+          - 'authorization_code'
+        token_endpoint_auth_method: 'client_secret_basic'
+        userinfo_signed_response_alg: 'none'
+
+# Gruppe für Admins (z. B. in der users_database.yml oder im LDAP):
+#   groups: ['stammbaum-admins']

@@ -1,0 +1,3 @@
+# Persistente Daten: SQLite (Links, Einstellungen, Präsentationen) und Bild-Cache
+[Volume]
+VolumeName=stammbaum-data

@@ -53,9 +53,12 @@ export class GrampsClient {
     return { access: body.access_token, refresh: tokens.refresh }
   }
 
-  /** Stellt sicher, dass gleichzeitige Anfragen nur einen Login auslösen. */
-  private async getTokens(renew = false): Promise<Tokens> {
-    if (this.tokens && !renew) return this.tokens
+  /**
+   * Stellt sicher, dass gleichzeitige Anfragen nur einen Login auslösen.
+   * `rejected`: das abgelehnte Access-Token – erneuert wird nur, wenn es noch aktuell ist.
+   */
+  private async getTokens(rejected?: string): Promise<Tokens> {
+    if (this.tokens && this.tokens.access !== rejected) return this.tokens
     if (!this.login) {
       const current = this.tokens
       this.login = (current ? this.refresh(current) : this.authenticate())
@@ -70,7 +73,7 @@ export class GrampsClient {
     let tokens = await this.getTokens()
     let res = await fetch(`${this.baseUrl}${path}`, { headers: { Authorization: `Bearer ${tokens.access}` } })
     if (res.status === 401) {
-      tokens = await this.getTokens(true)
+      tokens = await this.getTokens(tokens.access)
       res = await fetch(`${this.baseUrl}${path}`, { headers: { Authorization: `Bearer ${tokens.access}` } })
     }
     if (!res.ok) throw new Error(`Gramps-API ${path}: HTTP ${res.status}`)

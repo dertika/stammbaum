@@ -1,0 +1,56 @@
+# Rootless-Quadlet für das Stammbaum-Dashboard
+# Ablage: ~/.config/containers/systemd/stammbaum.container (Benutzer christian)
+# Danach: systemctl --user daemon-reload && systemctl --user start stammbaum
+
+[Unit]
+Description=Stammbaum-Dashboard (stammbaum.dertika.de)
+Wants=network-online.target
+After=network-online.target
+
+[Container]
+ContainerName=stammbaum
+# Lokal gebautes Image (podman build -t localhost/stammbaum:latest .)
+# oder aus der GitHub Container Registry: ghcr.io/dertika/stammbaum:latest
+Image=localhost/stammbaum:latest
+AutoUpdate=local
+
+# Nur lokal erreichbar – nach außen geht es ausschließlich über OpenResty
+PublishPort=127.0.0.1:8090:8080
+Volume=stammbaum-data.volume:/data
+
+Environment=TZ=Europe/Berlin
+Environment=PUBLIC_URL=https://stammbaum.dertika.de
+# Gramps Web intern ansprechen (nicht über Proxy/Authelia); Port anpassen.
+# Alternativ gemeinsames Podman-Netz: Network=gramps.network und http://<gramps-container>:5000
+Environment=GRAMPS_API_URL=http://host.containers.internal:5000
+Environment=GRAMPS_USER=stammbaum-dashboard
+Environment=GRAMPS_EDIT_URL=https://stammbaum-admin.dertika.de
+Environment=OIDC_ISSUER=https://auth.dertika.de
+Environment=OIDC_CLIENT_ID=stammbaum
+Environment=OIDC_ADMIN_GROUP=stammbaum-admins
+Environment=CACHE_TTL=900
+Environment=LIVING_YEARS=100
+# Environment=ROOT_PERSON=I0001
+
+Secret=stammbaum_gramps_password,type=env,target=GRAMPS_PASSWORD
+Secret=stammbaum_oidc_client_secret,type=env,target=OIDC_CLIENT_SECRET
+Secret=stammbaum_app_secret,type=env,target=APP_SECRET
+
+# Härtung
+ReadOnly=true
+Tmpfs=/tmp
+DropCapability=ALL
+NoNewPrivileges=true
+
+HealthCmd=wget -qO- http://127.0.0.1:8080/healthz
+HealthInterval=30s
+HealthStartPeriod=20s
+HealthOnFailure=kill
+
+[Service]
+Restart=always
+RestartSec=5
+TimeoutStartSec=120
+
+[Install]
+WantedBy=default.target

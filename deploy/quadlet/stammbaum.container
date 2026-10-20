@@ -9,10 +9,12 @@ After=network-online.target
 
 [Container]
 ContainerName=stammbaum
-# Lokal gebautes Image (podman build -t localhost/stammbaum:latest .)
-# oder aus der GitHub Container Registry: ghcr.io/dertika/stammbaum:latest
-Image=localhost/stammbaum:latest
-AutoUpdate=local
+# Image aus der GitHub Container Registry (gebaut von .github/workflows/ci.yml).
+# :latest folgt dem Standard-Branch; für feste Versionen z. B. :1 oder :1.2.0
+# Updates holt podman-auto-update.timer (systemctl --user enable --now podman-auto-update.timer).
+Image=ghcr.io/dertika/stammbaum:latest
+AutoUpdate=registry
+# Lokal gebaut statt Registry: Image=localhost/stammbaum:latest und AutoUpdate=local
 
 # Nur lokal erreichbar – nach außen geht es ausschließlich über OpenResty
 PublishPort=127.0.0.1:8090:8080

@@ -87,18 +87,36 @@ in die Authelia-Konfiguration übernehmen und Authelia neu starten. Den
 Klartext des Client-Secrets brauchst du im nächsten Schritt. Nur Mitglieder der
 Gruppe `stammbaum-admins` dürfen in den Admin-Bereich (`OIDC_ADMIN_GROUP`).
 
-### 3. Image bauen
+### 3. Image
+
+Die GitHub-Action [`ci.yml`](.github/workflows/ci.yml) baut nach erfolgreichen Tests
+ein Image für `linux/amd64` und `linux/arm64` und legt es als Paket in der GitHub
+Container Registry ab:
+
+| Auslöser | Tags |
+|---|---|
+| Push auf den Standard-Branch | `latest`, `sha-<commit>` |
+| Git-Tag `v1.2.3` | `1.2.3`, `1.2`, `1`, `sha-<commit>` |
+| manuell (*Actions → CI → Run workflow*) | wie oben, je nach Branch |
 
 ```sh
-git clone https://github.com/dertika/stammbaum.git ~/src/stammbaum
-cd ~/src/stammbaum
-podman build -t localhost/stammbaum:latest -f Containerfile .
+podman pull ghcr.io/dertika/stammbaum:latest
 ```
 
-Alternativ baut die GitHub-Action bei jedem Push auf `main` das Image
-`ghcr.io/dertika/stammbaum:latest`. Dann in der Quadlet-Datei
-`Image=ghcr.io/dertika/stammbaum:latest` und `AutoUpdate=registry` setzen.
-Bei einem privaten Repo ist vorher `podman login ghcr.io` nötig.
+Ist das Paket privat, gibt es zwei Wege: unter *GitHub → Packages → stammbaum →
+Package settings* auf *Public* stellen, oder einmalig
+`podman login ghcr.io -u dertika` mit einem Token mit `read:packages` ausführen.
+Die Anmeldung landet in `${XDG_RUNTIME_DIR}/containers/auth.json`. Damit sie einen
+Neustart übersteht, mit `--authfile ~/.config/containers/auth.json` speichern.
+
+Eine neue Version veröffentlichst du so:
+
+```sh
+git tag v1.0.0 && git push origin v1.0.0
+```
+
+Selbst bauen geht auch: `podman build -t localhost/stammbaum:latest -f Containerfile .`.
+Dann in der Quadlet-Datei `Image=localhost/stammbaum:latest` und `AutoUpdate=local` setzen.
 
 ### 4. Secrets anlegen
 
@@ -129,8 +147,16 @@ veröffentlicht ist, z. B. `PublishPort=127.0.0.1:5000:5000`. Alternativ hängst
 beide Container in ein gemeinsames Podman-Netz (`Network=…`) und nutzt
 `http://<gramps-container>:5000`.
 
-Updates bei lokalem Image: neu bauen, dann `podman auto-update` oder
-`systemctl --user restart stammbaum`.
+**Automatische Updates:** `AutoUpdate=registry` in der Quadlet-Datei plus Timer:
+
+```sh
+systemctl --user enable --now podman-auto-update.timer   # täglich
+podman auto-update --dry-run                              # prüfen, was anstünde
+```
+
+Schlägt der Start eines neuen Images fehl, rollt Podman automatisch auf das vorige zurück.
+Wer Updates lieber selbst steuert, trägt einen festen Tag ein (z. B. `:1.0.0`) und
+ändert ihn bei Bedarf.
 
 ### 6. OpenResty
 

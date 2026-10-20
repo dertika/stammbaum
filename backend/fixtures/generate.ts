@@ -35,6 +35,16 @@ const people: Spec[] = [
   { id: 'I0018', first: 'Theresia', last: 'Maier', gender: 0, birth: [0, 0, 1849, 'P2'], death: [0, 0, 1921, 'P2'] },
   { id: 'I0019', first: 'Martin', last: 'Vogel', gender: 1, birth: [12, 12, 1955, 'P5'] },
   { id: 'I0020', first: 'Sophie', last: 'Vogel', gender: 0, birth: [6, 7, 1984, 'P5'] },
+  // ohne Lebensdaten – gilt über das Geburtsjahr des Sohnes als verstorben
+  { id: 'I0021', first: 'Andreas', last: 'Muster', gender: 1 },
+]
+
+// Zusätzliche Ereignisse: [Person, Typ, Datum, Beschreibung]
+const extraEvents: [string, string, [number, number, number, string?], string][] = [
+  ['I0001', 'Occupation', [0, 0, 1895, 'P1'], 'Schmiedemeister'],
+  ['I0008', 'Emigration', [0, 4, 1952, 'P3'], 'Auswanderung nach Kanada'],
+  ['I0008', 'Immigration', [0, 0, 1960, 'P3'], 'Rückkehr nach Neustadt'],
+  ['I0011', 'Occupation', [0, 0, 1980], 'Elektroingenieur'],
 ]
 
 // [Vater, Mutter, Kinder, Heiratsjahr?]
@@ -47,6 +57,7 @@ const families: [string | null, string | null, string[], number?][] = [
   ['I0014', null, ['I0016']],
   ['I0017', 'I0018', ['I0002'], 1870],
   ['I0019', 'I0012', ['I0020'], 1982],
+  ['I0021', null, ['I0001']],
 ]
 
 const placeNames: Record<string, [string, string?]> = {
@@ -74,10 +85,19 @@ for (const s of people) {
   const refs = []
   if (s.birth) refs.push({ ref: event(`${s.id}b`, 'Birth', s.birth), role: 'Primary' })
   if (s.death) refs.push({ ref: event(`${s.id}d`, 'Death', s.death), role: 'Primary' })
+  extraEvents.filter(([pid]) => pid === s.id).forEach(([, type, d, description], i) => {
+    const handle = event(`${s.id}x${i}`, type, d)
+    db.events.find(e => e.handle === handle)!.description = description
+    refs.push({ ref: handle, role: 'Primary' })
+  })
   const notes = s.note ? [h('n', s.id)] : []
   if (s.note) db.notes.push({ handle: h('n', s.id), text: { string: s.note }, type: 'Person Note', private: false })
   const media = s.photo ? [{ ref: h('m', s.id), rect: [20, 5, 80, 65] }] : []
-  if (s.photo) db.media.push({ handle: h('m', s.id), mime: 'image/svg+xml', desc: `Foto ${s.first} ${s.last}`, private: false })
+  if (s.photo) db.media.push({ handle: h('m', s.id), mime: 'image/jpeg', desc: `Foto ${s.first} ${s.last}`, checksum: `c${s.id}`, private: false })
+  if (s.id === 'I0008') {
+    media.push({ ref: h('m', 'I0008b'), rect: [] })
+    db.media.push({ handle: h('m', 'I0008b'), mime: 'image/jpeg', desc: 'Hafen von Halifax, 1952', checksum: 'cI0008b', private: false })
+  }
   const p: RawPerson = {
     handle: h('p', s.id), gramps_id: s.id, gender: s.gender,
     primary_name: { first_name: s.first, surname_list: [{ surname: s.last, primary: true }] },

@@ -42,6 +42,8 @@ export interface Config {
   cacheTtl: number
   /** Gramps-ID der Startperson, falls nicht die Gramps-Hauptperson genommen werden soll */
   rootPerson?: string
+  /** Ohne Todesangabe gilt als lebend, wer jünger als so viele Jahre ist */
+  livingYears: number
 }
 
 export function loadConfig(): Config {
@@ -62,5 +64,6 @@ export function loadConfig(): Config {
     },
     cacheTtl: int('CACHE_TTL', 900),
     rootPerson: env('ROOT_PERSON'),
+    livingYears: int('LIVING_YEARS', 100),
   }
 }

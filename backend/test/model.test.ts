@@ -3,7 +3,8 @@ import { describe, expect, it } from 'vitest'
 import { formatDate } from '../src/gramps/dates.ts'
 import { buildModel } from '../src/gramps/model.ts'
 import type { RawDatabase } from '../src/gramps/raw.ts'
-import { projectTree } from '../src/view/project.ts'
+import { DEFAULT_DETAILS } from '../../shared/types.ts'
+import { project } from '../src/view/project.ts'
 
 const raw = JSON.parse(readFileSync(new URL('../fixtures/familie-muster.json', import.meta.url), 'utf8')) as RawDatabase
 const model = buildModel(raw, new Date('2026-01-01'))
@@ -29,11 +30,12 @@ describe('buildModel', () => {
     expect(georg.birth?.date).toBe('21. Juni 1899')
     expect(georg.birth?.place).toBe('Oberdorf, Landkreis Talheim')
     expect(georg.events.map(e => e.type)).toEqual(['Birth', 'Marriage', 'Death'])
+    expect(georg.events[1].partner).toBe('pi0005')
   })
 })
 
-describe('projectTree', () => {
-  const tree = projectTree(model)
+describe('project (alles sichtbar)', () => {
+  const { tree } = project(model, { living: 'show', details: DEFAULT_DETAILS, livingYears: 100 })
   it('nimmt die Gramps-Hauptperson als Start', () => {
     expect(tree.rootId).toBe('pi0011')
   })

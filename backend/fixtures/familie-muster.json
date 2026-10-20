@@ -21,6 +21,10 @@
     {
      "ref": "ei0001d",
      "role": "Primary"
+    },
+    {
+     "ref": "ei0001x0",
+     "role": "Primary"
     }
    ],
    "birth_ref_index": 0,
@@ -28,7 +32,9 @@
    "family_list": [
     "ff0001"
    ],
-   "parent_family_list": [],
+   "parent_family_list": [
+    "ff0009"
+   ],
    "media_list": [
     {
      "ref": "mi0001",
@@ -296,6 +302,14 @@
     {
      "ref": "ei0008d",
      "role": "Primary"
+    },
+    {
+     "ref": "ei0008x0",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0008x1",
+     "role": "Primary"
     }
    ],
    "birth_ref_index": 0,
@@ -315,6 +329,10 @@
       80,
       65
      ]
+    },
+    {
+     "ref": "mi0008b",
+     "rect": []
     }
    ],
    "note_list": [
@@ -404,6 +422,10 @@
    "event_ref_list": [
     {
      "ref": "ei0011b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0011x0",
      "role": "Primary"
     }
    ],
@@ -701,6 +723,30 @@
    "media_list": [],
    "note_list": [],
    "private": false
+  },
+  {
+   "handle": "pi0021",
+   "gramps_id": "I0021",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Andreas",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [],
+   "birth_ref_index": -1,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0009"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
   }
  ],
  "families": [
@@ -846,6 +892,18 @@
     }
    ],
    "private": false
+  },
+  {
+   "handle": "ff0009",
+   "father_handle": "pi0021",
+   "mother_handle": null,
+   "child_ref_list": [
+    {
+     "ref": "pi0001"
+    }
+   ],
+   "event_ref_list": [],
+   "private": false
   }
  ],
  "events": [
@@ -886,6 +944,26 @@
    },
    "place": "plp1",
    "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0001x0",
+   "type": "Occupation",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1895,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 704940
+   },
+   "place": "plp1",
+   "description": "Schmiedemeister",
    "note_list": [],
    "private": false
   },
@@ -1150,6 +1228,46 @@
    "private": false
   },
   {
+   "handle": "ei0008x0",
+   "type": "Emigration",
+   "date": {
+    "dateval": [
+     0,
+     4,
+     1952,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 726268
+   },
+   "place": "plp3",
+   "description": "Auswanderung nach Kanada",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0008x1",
+   "type": "Immigration",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1960,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 729120
+   },
+   "place": "plp3",
+   "description": "Rückkehr nach Neustadt",
+   "note_list": [],
+   "private": false
+  },
+  {
    "handle": "ei0009b",
    "type": "Birth",
    "date": {
@@ -1246,6 +1364,26 @@
    },
    "place": "plp3",
    "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0011x0",
+   "type": "Occupation",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1980,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 736560
+   },
+   "place": "",
+   "description": "Elektroingenieur",
    "note_list": [],
    "private": false
   },
@@ -1717,38 +1855,51 @@
  "media": [
   {
    "handle": "mi0001",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Johann Muster",
+   "checksum": "cI0001",
    "private": false
   },
   {
    "handle": "mi0002",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Maria Huber",
+   "checksum": "cI0002",
    "private": false
   },
   {
    "handle": "mi0003",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Georg Muster",
+   "checksum": "cI0003",
    "private": false
   },
   {
    "handle": "mi0005",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Elisabeth Weber",
+   "checksum": "cI0005",
    "private": false
   },
   {
    "handle": "mi0008",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Heinrich Muster",
+   "checksum": "cI0008",
+   "private": false
+  },
+  {
+   "handle": "mi0008b",
+   "mime": "image/jpeg",
+   "desc": "Hafen von Halifax, 1952",
+   "checksum": "cI0008b",
    "private": false
   },
   {
    "handle": "mi0011",
-   "mime": "image/svg+xml",
+   "mime": "image/jpeg",
    "desc": "Foto Peter Muster",
+   "checksum": "cI0011",
    "private": false
   }
  ],

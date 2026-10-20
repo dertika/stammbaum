@@ -64,7 +64,9 @@
       .setCardInnerHtmlCreator(cardHtml as never)
       .setOnCardClick((_e: MouseEvent, d: { data: { id: string } }) => onSelect(d.data.id))
     chart.updateMainId(mainId)
-    chart.updateTree({ initial: true })
+    // Auf schmalen Bildschirmen wäre der eingepasste Baum winzig – dort die Hauptperson mittig zeigen
+    if (container.clientWidth < 700) chart.updateTree({ initial: false, tree_position: 'main_to_middle', transition_time: 0 })
+    else chart.updateTree({ initial: true })
     shownMain = mainId
     return () => container.replaceChildren()
   })
@@ -91,6 +93,9 @@
     background: var(--bg);
     --background-color: var(--bg);
     --text-color: var(--text);
+    --male-color: var(--male);
+    --female-color: var(--female);
+    --genderless-color: var(--unknown);
     touch-action: none;
   }
   .tree :global(.link) { stroke: var(--link); stroke-width: 1.5px; }

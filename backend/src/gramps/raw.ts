@@ -91,6 +91,7 @@ export interface RawMedia {
   handle: string
   mime: string
   desc: string
+  checksum: string
   private: boolean
 }
 

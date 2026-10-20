@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import type { TreeResponse } from '../../shared/types.ts'
   import { ApiError, fetchTree } from './lib/api.ts'
+  import PersonPanel from './lib/PersonPanel.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
   import TreeView from './lib/TreeView.svelte'
 
@@ -11,16 +12,19 @@
   let ancestryDepth = $state(2)
   let progenyDepth = $state(2)
   let view: TreeView | undefined = $state()
+  let panelOpen = $state(false)
 
-  const known = $derived(new Set(tree?.people.map(p => p.id) ?? []))
+  const byId = $derived(new Map(tree?.people.map(p => [p.id, p]) ?? []))
+  const known = $derived(new Set(byId.keys()))
 
   function idFromHash(): string | undefined {
     return location.hash.match(/^#\/p\/([^/?]+)/)?.[1]
   }
 
-  function select(id: string) {
+  function select(id: string, openPanel = true) {
     if (!known.has(id)) return
     mainId = id
+    if (openPanel) panelOpen = true
     if (idFromHash() !== id) history.pushState(null, '', `#/p/${id}`)
   }
 
@@ -65,14 +69,17 @@
           <output>{progenyDepth}</output>
           <button type="button" aria-label="Mehr Nachkommen" onclick={() => (progenyDepth = clamp(progenyDepth + 1))}>+</button>
         </div>
-        <button type="button" class="plain" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long"> Einpassen</span></button>
+        <button type="button" class="plain" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
         {#if tree.rootId && tree.rootId !== mainId}
-          <button type="button" class="plain" aria-label="Zur Startperson" onclick={() => select(tree!.rootId!)}><span aria-hidden="true">⌂</span><span class="long"> Zum Anfang</span></button>
+          <button type="button" class="plain" aria-label="Zur Startperson" onclick={() => select(tree!.rootId!, false)}><span aria-hidden="true">⌂</span><span class="long">Zum Anfang</span></button>
         {/if}
       </div>
     </header>
     <main>
       <TreeView bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} onSelect={select} />
+      {#if panelOpen}
+        <PersonPanel id={mainId} people={byId} onSelect={select} onClose={() => (panelOpen = false)} />
+      {/if}
     </main>
   </div>
 {:else if error}
@@ -125,9 +132,9 @@
     height: 32px;
     cursor: pointer;
   }
-  button.plain { padding: 0 12px; }
+  button.plain { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }
   button:hover { border-color: var(--accent); }
-  main { flex: 1; min-height: 0; }
+  main { flex: 1; min-height: 0; position: relative; overflow: hidden; }
   .message { display: grid; place-content: center; height: 100%; padding: 24px; text-align: center; }
   .message h1 { font-size: 24px; margin-bottom: 8px; }
   .message p { color: var(--muted); max-width: 32em; }

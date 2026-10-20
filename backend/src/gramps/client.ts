@@ -11,7 +11,7 @@ const KEYS = {
   events: 'handle,type,date,place,description,note_list,private',
   places: 'handle,name,placeref_list,private',
   notes: 'handle,text,type,private',
-  media: 'handle,mime,desc,private',
+  media: 'handle,mime,desc,checksum,private',
 }
 
 /**

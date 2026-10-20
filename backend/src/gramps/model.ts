@@ -13,6 +13,11 @@ export interface EventInfo {
   private: boolean
 }
 
+/** Ereignis aus Sicht einer Person; bei Familienereignissen mit dem Partner */
+export interface PersonEvent extends EventInfo {
+  partner?: string
+}
+
 export interface PhotoRef {
   mediaId: string
   /** Ausschnitt in Prozent [x1, y1, x2, y2] */
@@ -28,7 +33,7 @@ export interface Person {
   birth?: EventInfo
   death?: EventInfo
   /** Ereignisse, bei denen die Person Hauptbeteiligte ist (inkl. Familienereignisse) */
-  events: EventInfo[]
+  events: PersonEvent[]
   parents: string[]
   spouses: string[]
   children: string[]
@@ -49,6 +54,7 @@ export interface Media {
   id: string
   mime: string
   description: string
+  checksum: string
   private: boolean
 }
 
@@ -81,7 +87,8 @@ function unique(ids: (string | null | undefined)[]): string[] {
 
 export function buildModel(raw: RawDatabase, loadedAt = new Date()): Model {
   const places = new Map(raw.places.map(p => [p.handle, p]))
-  const families = new Map(raw.families.map(f => [f.handle, f]))
+  // Private Familien behandeln wir wie nicht vorhanden – auch die Beziehungen bleiben verborgen
+  const families = new Map(raw.families.filter(f => !f.private).map(f => [f.handle, f]))
   const rawPeople = new Map(raw.people.map(p => [p.handle, p]))
 
   const events = new Map<string, EventInfo>()
@@ -114,12 +121,17 @@ export function buildModel(raw: RawDatabase, loadedAt = new Date()): Model {
     const ownFamilies = p.family_list.map(h => families.get(h)).filter(f => !!f)
     const parentFamilies = p.parent_family_list.map(h => families.get(h)).filter(f => !!f)
 
-    const personEvents = p.event_ref_list
+    const personEvents: (PersonEvent | undefined)[] = p.event_ref_list
       .filter(r => !r.role || r.role === 'Primary')
       .map(r => events.get(r.ref))
-    const familyEvents = ownFamilies.flatMap(f => f.event_ref_list
-      .filter(r => !r.role || r.role === 'Family')
-      .map(r => events.get(r.ref)))
+    const familyEvents = ownFamilies.flatMap(f => {
+      const partner = (f.father_handle === p.handle ? f.mother_handle : f.father_handle) ?? undefined
+      return f.event_ref_list
+        .filter(r => !r.role || r.role === 'Family')
+        .map(r => events.get(r.ref))
+        .filter(e => !!e)
+        .map((e): PersonEvent => ({ ...e, partner }))
+    })
 
     const surname = p.primary_name.surname_list.find(s => s.primary) ?? p.primary_name.surname_list[0]
     const photo = p.media_list[0]
@@ -133,7 +145,7 @@ export function buildModel(raw: RawDatabase, loadedAt = new Date()): Model {
       birth: primaryEvent(p, p.birth_ref_index, BIRTH_FALLBACKS),
       death: primaryEvent(p, p.death_ref_index, DEATH_FALLBACKS),
       events: [...personEvents, ...familyEvents]
-        .filter((e): e is EventInfo => !!e)
+        .filter((e): e is PersonEvent => !!e)
         .sort((a, b) => (a.sortval || Infinity) - (b.sortval || Infinity)),
       parents: unique(parentFamilies.flatMap(f => [f.father_handle, f.mother_handle]))
         .filter(h => rawPeople.has(h)),
@@ -154,7 +166,7 @@ export function buildModel(raw: RawDatabase, loadedAt = new Date()): Model {
     loadedAt,
     people,
     notes: new Map(raw.notes.map(n => [n.handle, { id: n.handle, text: n.text.string, type: n.type, private: n.private }])),
-    media: new Map(raw.media.map(m => [m.handle, { id: m.handle, mime: m.mime, description: m.desc, private: m.private }])),
+    media: new Map(raw.media.map(m => [m.handle, { id: m.handle, mime: m.mime, description: m.desc, checksum: m.checksum, private: m.private }])),
     defaultPerson: raw.defaultPerson && rawPeople.has(raw.defaultPerson) ? raw.defaultPerson : null,
   }
 }

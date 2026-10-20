@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { LivingMode, ShareLink } from '../../../shared/types.ts'
+  import type { LivingMode, Presentation, ShareLink } from '../../../shared/types.ts'
   import { admin, formatDateTime } from './api.ts'
 
   const STATUS = { active: 'Aktiv', expired: 'Abgelaufen', revoked: 'Widerrufen' }
@@ -16,11 +16,14 @@
   let label = $state('')
   let living = $state<LivingMode>('anonymize')
   let expires = $state('')
+  let presentationIds = $state<string[]>([])
+  let presentations = $state<Presentation[]>([])
   let saving = $state(false)
+  const titleOf = (id: string) => presentations.find(p => p.id === id)?.title
 
   async function load() {
     try {
-      links = await admin.links()
+      ;[links, presentations] = await Promise.all([admin.links(), admin.presentations()])
       error = ''
     } catch (e) {
       error = (e as Error).message
@@ -34,6 +37,7 @@
     label = link?.label ?? ''
     living = link?.living ?? 'anonymize'
     expires = link?.expiresAt ? link.expiresAt.slice(0, 10) : ''
+    presentationIds = link?.presentationIds.filter(id => titleOf(id)) ?? []
     formOpen = true
   }
 
@@ -43,7 +47,7 @@
     // Ablaufdatum gilt bis zum Ende des gewählten Tages (Ortszeit)
     const expiresAt = expires ? new Date(`${expires}T23:59:59`).toISOString() : null
     try {
-      const input = { label, living, expiresAt }
+      const input = { label, living, expiresAt, presentationIds }
       const saved = editing ? await admin.updateLink(editing, input) : await admin.createLink(input)
       formOpen = false
       await load()
@@ -112,6 +116,14 @@
       <span>Gültig bis (leer = unbegrenzt)</span>
       <input type="date" bind:value={expires} />
     </label>
+    {#if presentations.length}
+      <fieldset>
+        <legend>Präsentationen, die über diesen Link abrufbar sind</legend>
+        {#each presentations as p (p.id)}
+          <label><input type="checkbox" bind:group={presentationIds} value={p.id} /> {p.title}</label>
+        {/each}
+      </fieldset>
+    {/if}
     <div class="row">
       <button type="submit" class="btn primary" disabled={saving}>{editing ? 'Speichern' : 'Link erstellen und kopieren'}</button>
       <button type="button" class="btn" onclick={() => (formOpen = false)}>Abbrechen</button>
@@ -134,6 +146,7 @@
         <div><dt>Lebende Personen</dt><dd>{link.living === 'show' ? 'sichtbar' : 'anonymisiert'}</dd></div>
         <div><dt>Gültig bis</dt><dd>{link.expiresAt ? formatDateTime(link.expiresAt) : 'unbegrenzt'}</dd></div>
         <div><dt>Zuletzt geöffnet</dt><dd>{formatDateTime(link.lastUsedAt, true)} ({link.useCount}×)</dd></div>
+        <div><dt>Präsentationen</dt><dd>{link.presentationIds.map(titleOf).filter(Boolean).join(', ') || '–'}</dd></div>
         <div><dt>Erstellt</dt><dd>{formatDateTime(link.createdAt)}</dd></div>
       </dl>
       {#if link.url}

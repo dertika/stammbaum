@@ -19,6 +19,14 @@ const MIGRATIONS = [
     key TEXT PRIMARY KEY,
     value TEXT NOT NULL
   );`,
+  `CREATE TABLE presentations (
+    id TEXT PRIMARY KEY,
+    title TEXT NOT NULL,
+    stations TEXT NOT NULL,
+    created_at TEXT NOT NULL,
+    updated_at TEXT NOT NULL
+  );
+  ALTER TABLE links ADD COLUMN presentation_ids TEXT NOT NULL DEFAULT '[]';`,
 ]
 
 export type Db = DatabaseSync

@@ -69,6 +69,7 @@ export interface PersonDetails {
 export interface ViewInfo {
   label?: string
   details: DetailSettings
+  presentations: PresentationSummary[]
 }
 
 export type LivingMode = 'show' | 'anonymize'
@@ -88,6 +89,7 @@ export interface ShareLink {
   lastUsedAt: string | null
   useCount: number
   status: LinkStatus
+  presentationIds: string[]
 }
 
 export interface ShareLinkInput {
@@ -95,6 +97,8 @@ export interface ShareLinkInput {
   living: LivingMode
   /** ISO-Zeitpunkt oder null für unbegrenzt */
   expiresAt: string | null
+  /** Präsentationen, die über diesen Link abrufbar sind */
+  presentationIds: string[]
 }
 
 export interface AdminInfo {
@@ -107,4 +111,34 @@ export interface AdminStatus {
   loadedAt: string | null
   people: number
   error: string | null
+}
+
+/** Eine Station einer Präsentation – wie eine Folie */
+export interface Station {
+  personId: string
+  /** Überschrift; leer = Name der Person */
+  title?: string
+  text?: string
+  /** Generationen Vorfahren/Nachkommen auf dieser Folie */
+  ancestry: number
+  progeny: number
+}
+
+export interface Presentation {
+  id: string
+  title: string
+  stations: Station[]
+}
+
+export interface PresentationSummary {
+  id: string
+  title: string
+  stationCount: number
+}
+
+export interface AdminPerson {
+  id: string
+  name: string
+  lifespan: string
+  private: boolean
 }

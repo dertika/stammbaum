@@ -8,6 +8,7 @@ import { buildServer } from '../src/server.ts'
 import { deriveKey } from '../src/store/crypto.ts'
 import { openDb } from '../src/store/db.ts'
 import { LinkStore } from '../src/store/links.ts'
+import { PresentationStore } from '../src/store/presentations.ts'
 import { SettingsStore } from '../src/store/settings.ts'
 
 export const baseConfig: Config = {
@@ -27,6 +28,7 @@ export function testApp(overrides: Partial<Config> = {}) {
     images: new ImageCache(mkdtempSync(join(tmpdir(), 'sb-')), fixtureImages()),
     links: new LinkStore(db, deriveKey(config.appSecret, 'link-token'), config.publicUrl),
     settings: new SettingsStore(db),
+    presentations: new PresentationStore(db),
   }
   return { ...services, app: buildServer(services) }
 }

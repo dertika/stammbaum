@@ -6,9 +6,11 @@
   import DataPage from './DataPage.svelte'
   import DisplayPage from './DisplayPage.svelte'
   import LinksPage from './LinksPage.svelte'
+  import PresentationsPage from './PresentationsPage.svelte'
 
   const pages = [
     { path: '/admin/links', label: 'Freigabelinks' },
+    { path: '/admin/praesentationen', label: 'Präsentationen' },
     { path: '/admin/anzeige', label: 'Anzeige' },
     { path: '/admin/daten', label: 'Datenstand' },
   ]
@@ -58,6 +60,8 @@
     <main>
       {#if current.path === '/admin/links'}
         <LinksPage />
+      {:else if current.path === '/admin/praesentationen'}
+        <PresentationsPage />
       {:else if current.path === '/admin/anzeige'}
         <DisplayPage />
       {:else}

@@ -1,7 +1,8 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import type { ViewInfo } from '../../../shared/types.ts'
+import type { Presentation, PresentationSummary, ViewInfo } from '../../../shared/types.ts'
+import { getSession } from '../auth/session.ts'
 import type { Services } from '../server.ts'
-import { mediaKey, personDetails, type ViewOptions } from '../view/project.ts'
+import { mediaKey, personDetails, type Projection, type ViewOptions } from '../view/project.ts'
 import { ProjectionCache } from '../view/views.ts'
 
 export const LINK_COOKIE = 'sb_link'
@@ -9,12 +10,14 @@ export const LINK_COOKIE = 'sb_link'
 export interface Access {
   label?: string
   options: ViewOptions
+  /** Freigegebene Präsentationen; null = alle (nur Entwicklung) */
+  presentationIds: string[] | null
 }
 
 type Resolved = { access: Access } | { denied: 401 | 410 }
 
 /** Routen für die Ansicht der Familie: alles nur über einen gültigen Freigabelink. */
-export function viewRoutes({ config, cache, images, links, settings }: Services) {
+export function viewRoutes({ config, cache, images, links, settings, presentations }: Services) {
   const projections = new ProjectionCache()
   const secure = config.publicUrl.startsWith('https://')
 
@@ -22,15 +25,31 @@ export function viewRoutes({ config, cache, images, links, settings }: Services)
   function resolveAccess(req: FastifyRequest): Resolved {
     const base = { livingYears: config.livingYears, rootGrampsId: config.rootPerson, details: settings.details() }
     const token = req.cookies[LINK_COOKIE]
-    if (token) {
-      const check = links.check(token)
+    const check = token ? links.check(token) : null
+    if (check) {
       if (check.status === 'active') {
-        return { access: { label: check.link.label, options: { ...base, living: check.link.living } } }
+        return {
+          access: {
+            label: check.link.label,
+            options: { ...base, living: check.link.living },
+            presentationIds: JSON.parse(check.link.presentation_ids) as string[],
+          },
+        }
       }
-      if (!config.devOpenAccess) return { denied: check.status === 'unknown' ? 401 : 410 }
     }
+    // Angemeldete Admins sehen alles – praktisch zum Prüfen von Präsentationen
+    if (getSession(req)) {
+      return { access: { label: 'Verwaltung', options: { ...base, living: 'show' }, presentationIds: null } }
+    }
+    if (check && !config.devOpenAccess) return { denied: check.status === 'unknown' ? 401 : 410 }
     if (config.devOpenAccess) {
-      return { access: { label: 'Entwicklung', options: { ...base, living: process.env.DEV_LIVING === 'show' ? 'show' : 'anonymize' } } }
+      return {
+        access: {
+          label: 'Entwicklung',
+          options: { ...base, living: process.env.DEV_LIVING === 'show' ? 'show' : 'anonymize' },
+          presentationIds: null,
+        },
+      }
     }
     return { denied: 401 }
   }
@@ -51,6 +70,11 @@ export function viewRoutes({ config, cache, images, links, settings }: Services)
     return { access: r.access, model, projection: projections.get(model, r.access.options) }
   }
 
+  function allowedPresentations(access: Access): Presentation[] {
+    const all = presentations.list()
+    return access.presentationIds === null ? all : all.filter(p => access.presentationIds!.includes(p.id))
+  }
+
   return async function (app: FastifyInstance) {
     // Einstieg über den geheimen Link: Token ins Cookie, dann ohne Token in der URL weiter
     app.get<{ Params: { token: string } }>('/s/:token', async (req, reply) => {
@@ -69,11 +93,24 @@ export function viewRoutes({ config, cache, images, links, settings }: Services)
     })
 
     app.get('/api/view/info', async (req, reply) => {
-      const r = resolveAccess(req)
-      if ('denied' in r) return deny(reply, r.denied)
-      reply.header('Cache-Control', 'private, no-store')
-      const info: ViewInfo = { label: r.access.label, details: r.access.options.details }
+      const v = await view(req, reply)
+      if (!v) return reply
+      const list: PresentationSummary[] = allowedPresentations(v.access).map(p => ({
+        id: p.id,
+        title: p.title,
+        stationCount: visibleStations(p, v.projection).length,
+      }))
+      const info: ViewInfo = { label: v.access.label, details: v.access.options.details, presentations: list }
       return info
+    })
+
+    app.get<{ Params: { id: string } }>('/api/view/presentations/:id', async (req, reply) => {
+      const v = await view(req, reply)
+      if (!v) return reply
+      const p = allowedPresentations(v.access).find(p => p.id === req.params.id)
+      if (!p) return reply.code(404).send({ error: 'Präsentation nicht gefunden' })
+      const result: Presentation = { id: p.id, title: p.title, stations: visibleStations(p, v.projection) }
+      return result
     })
 
     app.get('/api/view/tree', async (req, reply) => {
@@ -106,4 +143,9 @@ export function viewRoutes({ config, cache, images, links, settings }: Services)
       }
     })
   }
+}
+
+/** Stationen zu Personen, die für diesen Zugang nicht (oder nur anonym) sichtbar sind, fallen weg. */
+function visibleStations(p: Presentation, projection: Projection) {
+  return p.stations.filter(s => projection.open.has(s.personId))
 }

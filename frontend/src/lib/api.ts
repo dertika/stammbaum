@@ -1,4 +1,4 @@
-import type { PersonDetails, TreeResponse, ViewInfo } from '../../../shared/types.ts'
+import type { PersonDetails, Presentation, TreeResponse, ViewInfo } from '../../../shared/types.ts'
 
 export class ApiError extends Error {
   status: number
@@ -21,3 +21,4 @@ export const fetchInfo = () => getJson<ViewInfo>('/api/view/info')
 export const fetchTree = () => getJson<TreeResponse>('/api/view/tree')
 export const fetchPerson = (id: string, signal?: AbortSignal) =>
   getJson<PersonDetails>(`/api/view/person/${encodeURIComponent(id)}`, signal)
+export const fetchPresentation = (id: string) => getJson<Presentation>(`/api/view/presentations/${encodeURIComponent(id)}`)

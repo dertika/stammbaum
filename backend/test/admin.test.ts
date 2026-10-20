@@ -76,11 +76,23 @@ describe('Admin-Bereich', () => {
   it('zeigt die Vorschau eines Links', async () => {
     const { app, links } = testApp({ devOpenAccess: true, adminDevLogin: true })
     const cookies = await login(app)
-    const link = links.create({ label: 'Vorschau', living: 'anonymize', expiresAt: null })
+    const link = links.create({ label: 'Vorschau', living: 'anonymize', expiresAt: null, presentationIds: [] })
     const res = await app.inject({ url: `/api/admin/links/${link.id}/preview`, cookies })
     expect(res.statusCode).toBe(302)
     const viewCookie = res.cookies.find(c => c.name === 'sb_link')!
     const { cookies: expected } = await openLink(app, link.url)
     expect(viewCookie.value).toBe(expected.sb_link)
+  })
+})
+
+describe('Ansicht für Admins', () => {
+  it('zeigt angemeldeten Admins den vollständigen Baum', async () => {
+    const { app } = testApp({ adminDevLogin: true, devOpenAccess: true })
+    const cookies = await login(app)
+    // ohne Entwicklungsmodus, aber mit derselben Sitzung (gleiches Secret)
+    const prod = testApp()
+    const res = await prod.app.inject({ url: '/api/view/tree', cookies })
+    expect(res.statusCode).toBe(200)
+    expect(res.body).toContain('Peter')
   })
 })

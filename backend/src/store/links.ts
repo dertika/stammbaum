@@ -14,6 +14,7 @@ interface Row {
   created_at: string
   last_used_at: string | null
   use_count: number
+  presentation_ids: string
 }
 
 /** Ergebnis der Prüfung eines Tokens */
@@ -39,7 +40,10 @@ export function validateInput(input: unknown): ShareLinkInput {
     if (Number.isNaN(d.getTime())) throw new Error('Ungültiges Ablaufdatum')
     expiresAt = d.toISOString()
   }
-  return { label, living: i.living, expiresAt }
+  const presentationIds = Array.isArray(i.presentationIds)
+    ? [...new Set(i.presentationIds.filter((p): p is string => typeof p === 'string'))]
+    : []
+  return { label, living: i.living, expiresAt, presentationIds }
 }
 
 /**
@@ -76,6 +80,7 @@ export class LinkStore {
       lastUsedAt: row.last_used_at,
       useCount: row.use_count,
       status: status(row, now),
+      presentationIds: JSON.parse(row.presentation_ids) as string[],
     }
   }
 
@@ -92,15 +97,16 @@ export class LinkStore {
   create(input: ShareLinkInput): ShareLink {
     const token = newToken()
     const id = randomUUID()
-    this.db.prepare(`INSERT INTO links (id, label, token_hash, token_enc, living, expires_at, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`)
-      .run(id, input.label, hashToken(token), encrypt(this.key, token), input.living, input.expiresAt, new Date().toISOString())
+    this.db.prepare(`INSERT INTO links (id, label, token_hash, token_enc, living, expires_at, created_at, presentation_ids)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+      .run(id, input.label, hashToken(token), encrypt(this.key, token), input.living, input.expiresAt, new Date().toISOString(),
+        JSON.stringify(input.presentationIds ?? []))
     return this.get(id)!
   }
 
   update(id: string, input: ShareLinkInput): ShareLink | null {
-    this.db.prepare('UPDATE links SET label = ?, living = ?, expires_at = ? WHERE id = ?')
-      .run(input.label, input.living, input.expiresAt, id)
+    this.db.prepare('UPDATE links SET label = ?, living = ?, expires_at = ?, presentation_ids = ? WHERE id = ?')
+      .run(input.label, input.living, input.expiresAt, JSON.stringify(input.presentationIds ?? []), id)
     return this.get(id)
   }
 

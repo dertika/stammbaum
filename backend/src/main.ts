@@ -7,6 +7,7 @@ import { buildServer } from './server.ts'
 import { deriveKey } from './store/crypto.ts'
 import { openDb } from './store/db.ts'
 import { LinkStore } from './store/links.ts'
+import { PresentationStore } from './store/presentations.ts'
 import { SettingsStore } from './store/settings.ts'
 
 const config = loadConfig()
@@ -27,7 +28,8 @@ const images = new ImageCache(join(config.dataDir, 'cache', 'images'), services.
 const db = openDb(join(config.dataDir, 'stammbaum.db'))
 const links = new LinkStore(db, deriveKey(config.appSecret, 'link-token'), config.publicUrl)
 const settings = new SettingsStore(db)
-const app = buildServer({ config, cache, images, links, settings })
+const presentations = new PresentationStore(db)
+const app = buildServer({ config, cache, images, links, settings, presentations })
 
 if (config.devOpenAccess) app.log.warn('DEV_OPEN_ACCESS aktiv – Baum ist ohne Freigabelink abrufbar. Nicht in Produktion verwenden!')
 

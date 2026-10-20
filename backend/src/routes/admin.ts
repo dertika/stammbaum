@@ -1,12 +1,13 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import type { AdminInfo, AdminStatus, DetailSettings } from '../../../shared/types.ts'
+import type { AdminInfo, AdminPerson, AdminStatus, DetailSettings } from '../../../shared/types.ts'
 import { getSession } from '../auth/session.ts'
 import type { Services } from '../server.ts'
 import { validateInput } from '../store/links.ts'
+import { validatePresentation } from '../store/presentations.ts'
 import { LINK_COOKIE } from './view.ts'
 
 /** Admin-API – jede Route verlangt eine gültige OIDC-Sitzung. */
-export function adminRoutes({ config, cache, links, settings }: Services) {
+export function adminRoutes({ config, cache, links, settings, presentations }: Services) {
   const secure = config.publicUrl.startsWith('https://')
   const publicOrigin = new URL(config.publicUrl).origin
 
@@ -81,6 +82,46 @@ export function adminRoutes({ config, cache, links, settings }: Services) {
 
     app.delete<{ Params: { id: string } }>('/api/admin/links/:id', async (req, reply) => {
       return links.delete(req.params.id) ? { ok: true } : reply.code(404).send({ error: 'Link nicht gefunden' })
+    })
+
+    // Personenliste für den Präsentations-Editor (ungefiltert – nur für Admins)
+    app.get('/api/admin/people', async () => {
+      const model = await cache.get()
+      const year = (d?: string) => d?.match(/\d{3,4}/)?.[0]
+      return [...model.people.values()]
+        .map((p): AdminPerson => {
+          const b = year(p.birth?.date)
+          const d = year(p.death?.date)
+          return {
+            id: p.id,
+            name: [p.firstName, p.lastName].filter(Boolean).join(' ') || p.grampsId,
+            lifespan: b && d ? `${b} – ${d}` : b ? `* ${b}` : d ? `† ${d}` : '',
+            private: p.private,
+          }
+        })
+        .sort((a, b) => a.name.localeCompare(b.name, 'de'))
+    })
+
+    app.get('/api/admin/presentations', async () => presentations.list())
+
+    app.post('/api/admin/presentations', async (req, reply) => {
+      try {
+        return reply.code(201).send(presentations.create(validatePresentation(req.body)))
+      } catch (err) {
+        return badRequest(reply, err)
+      }
+    })
+
+    app.put<{ Params: { id: string } }>('/api/admin/presentations/:id', async (req, reply) => {
+      try {
+        return presentations.update(req.params.id, validatePresentation(req.body)) ?? reply.code(404).send({ error: 'Präsentation nicht gefunden' })
+      } catch (err) {
+        return badRequest(reply, err)
+      }
+    })
+
+    app.delete<{ Params: { id: string } }>('/api/admin/presentations/:id', async (req, reply) => {
+      return presentations.delete(req.params.id) ? { ok: true } : reply.code(404).send({ error: 'Präsentation nicht gefunden' })
     })
 
     // Vorschau: Ansicht genau so, wie sie die Empfänger dieses Links sehen

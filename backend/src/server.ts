@@ -10,6 +10,7 @@ import { adminRoutes } from './routes/admin.ts'
 import { viewRoutes } from './routes/view.ts'
 import { deriveKey } from './store/crypto.ts'
 import type { LinkStore } from './store/links.ts'
+import type { PresentationStore } from './store/presentations.ts'
 import type { SettingsStore } from './store/settings.ts'
 
 export interface Services {
@@ -18,6 +19,7 @@ export interface Services {
   images: ImageCache
   links: LinkStore
   settings: SettingsStore
+  presentations: PresentationStore
 }
 
 export function buildServer(services: Services) {

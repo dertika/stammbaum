@@ -13,9 +13,12 @@
     ancestryDepth: number
     progenyDepth: number
     onSelect: (id: string) => void
+    /** Präsentation: große Karten, hoher Kontrast, Ausschnitt immer eingepasst */
+    variant?: 'normal' | 'present'
   }
 
-  let { people, mainId, ancestryDepth, progenyDepth, onSelect }: Props = $props()
+  let { people, mainId, ancestryDepth, progenyDepth, onSelect, variant = 'normal' }: Props = $props()
+  const present = $derived(variant === 'present')
 
   let container: HTMLDivElement
   let chart: Chart | undefined
@@ -53,8 +56,8 @@
   onMount(() => {
     chart = createChart(container, toChartData(people))
       .setTransitionTime(700)
-      .setCardXSpacing(250)
-      .setCardYSpacing(130)
+      .setCardXSpacing(present ? 400 : 250)
+      .setCardYSpacing(present ? 210 : 130)
       .setSingleParentEmptyCard(false)
       .setShowSiblingsOfMain(true)
       .setAncestryDepth(ancestryDepth)
@@ -65,7 +68,8 @@
       .setOnCardClick((_e: MouseEvent, d: { data: { id: string } }) => onSelect(d.data.id))
     chart.updateMainId(mainId)
     // Auf schmalen Bildschirmen wäre der eingepasste Baum winzig – dort die Hauptperson mittig zeigen
-    if (container.clientWidth < 700) chart.updateTree({ initial: false, tree_position: 'main_to_middle', transition_time: 0 })
+    if (present) chart.updateTree({ initial: false, tree_position: 'fit', transition_time: 0 })
+    else if (container.clientWidth < 700) chart.updateTree({ initial: false, tree_position: 'main_to_middle', transition_time: 0 })
     else chart.updateTree({ initial: true })
     shownMain = mainId
     return () => container.replaceChildren()
@@ -78,13 +82,15 @@
     const down = progenyDepth
     if (!chart) return
     chart.setAncestryDepth(up).setProgenyDepth(down)
-    if (id !== shownMain) chart.updateMainId(id)
-    chart.updateTree({ tree_position: id !== shownMain ? 'main_to_middle' : 'inherit' })
+    const changed = id !== shownMain
+    if (changed) chart.updateMainId(id)
+    // Präsentation: immer passend einrahmen; sonst Hauptperson mittig, Zoom bei Tiefenänderung behalten
+    chart.updateTree({ initial: false, tree_position: present ? 'fit' : changed ? 'main_to_middle' : 'inherit' })
     shownMain = id
   })
 </script>
 
-<div class="f3 tree" bind:this={container}></div>
+<div class="f3 tree" class:present bind:this={container}></div>
 
 <style>
   .tree {
@@ -133,4 +139,30 @@
   .tree :global(.sb-text) { min-width: 0; }
   .tree :global(.sb-name) { font-weight: 600; font-size: 15px; line-height: 1.25; overflow-wrap: anywhere; }
   .tree :global(.sb-dates) { font-size: 13px; color: var(--muted); margin-top: 2px; }
+
+  /* Präsentation: helle Karten auf Schwarz, große Schrift */
+  .present {
+    --bg: #000;
+    --link: #8a8a8a;
+    background: #000;
+  }
+  .present :global(.link) { stroke-width: 3px; }
+  .present :global(.sb-card) {
+    width: 350px;
+    min-height: 116px;
+    gap: 16px;
+    padding: 12px 18px 12px 12px;
+    border: 0;
+    border-left: 10px solid #9e9e9e;
+    border-radius: 14px;
+    background: #fff;
+    color: #000;
+  }
+  .present :global(.card-male .sb-card) { background: #fff; border-left-color: #3d8fd1; }
+  .present :global(.card-female .sb-card) { background: #fff; border-left-color: #d14d72; }
+  .present :global(.card-main .sb-card) { outline: 6px solid #ffd400; outline-offset: 4px; }
+  .present :global(.sb-anon) { opacity: 1; background: #d9d9d9 !important; }
+  .present :global(.sb-avatar) { width: 88px; height: 88px; font-size: 30px; background: #e6e6e6; color: #333; }
+  .present :global(.sb-name) { font-size: 25px; line-height: 1.15; }
+  .present :global(.sb-dates) { font-size: 21px; color: #333; margin-top: 4px; }
 </style>

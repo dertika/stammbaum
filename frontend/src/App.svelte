@@ -1,8 +1,9 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { TreeResponse } from '../../shared/types.ts'
-  import { ApiError, fetchTree } from './lib/api.ts'
+  import type { Presentation as PresentationData, TreeResponse, ViewInfo } from '../../shared/types.ts'
+  import { ApiError, fetchInfo, fetchPresentation, fetchTree } from './lib/api.ts'
   import PersonPanel from './lib/PersonPanel.svelte'
+  import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
   import TreeView from './lib/TreeView.svelte'
 
@@ -13,6 +14,9 @@
   let progenyDepth = $state(2)
   let view: TreeView | undefined = $state()
   let panelOpen = $state(false)
+  let info = $state<ViewInfo | null>(null)
+  let presenting = $state<{ data: PresentationData | null, index: number } | null>(null)
+  let menuOpen = $state(false)
   const linkHint = new URLSearchParams(location.search).get('link')
 
   const byId = $derived(new Map(tree?.people.map(p => [p.id, p]) ?? []))
@@ -20,6 +24,45 @@
 
   function idFromHash(): string | undefined {
     return location.hash.match(/^#\/p\/([^/?]+)/)?.[1]
+  }
+
+  /** #/praesentation (frei) bzw. #/praesentation/<id>/<folie> */
+  function presentationFromHash(): { id: string | null, index: number } | null {
+    const m = location.hash.match(/^#\/praesentation(?:\/([^/]+)(?:\/(\d+))?)?/)
+    return m ? { id: m[1] ?? null, index: m[2] ? Number(m[2]) - 1 : 0 } : null
+  }
+
+  async function startPresentation(id: string | null, index = 0, push = true) {
+    menuOpen = false
+    panelOpen = false
+    try {
+      presenting = { data: id ? await fetchPresentation(id) : null, index }
+      if (push) history.pushState(null, '', id ? `#/praesentation/${id}/${index + 1}` : '#/praesentation')
+    } catch {
+      presenting = null
+    }
+  }
+
+  function onPosition(personId: string, index: number) {
+    mainId = personId
+    const id = presenting?.data?.id
+    history.replaceState(null, '', id ? `#/praesentation/${id}/${index + 1}` : '#/praesentation')
+  }
+
+  function exitPresentation() {
+    presenting = null
+    history.pushState(null, '', `#/p/${mainId}`)
+  }
+
+  function applyHash() {
+    const pres = presentationFromHash()
+    if (pres) {
+      if (!presenting || (presenting.data?.id ?? null) !== pres.id) startPresentation(pres.id, pres.index, false)
+      return
+    }
+    presenting = null
+    const id = idFromHash()
+    if (id && known.has(id)) mainId = id
   }
 
   function select(id: string, openPanel = true) {
@@ -30,17 +73,15 @@
   }
 
   onMount(() => {
-    const onHash = () => {
-      const id = idFromHash()
-      if (id && known.has(id)) mainId = id
-    }
-    window.addEventListener('popstate', onHash)
+    window.addEventListener('popstate', applyHash)
 
-    fetchTree()
-      .then(t => {
+    Promise.all([fetchTree(), fetchInfo()])
+      .then(([t, i]) => {
         tree = t
+        info = i
         const fromHash = idFromHash()
         mainId = fromHash && t.people.some(p => p.id === fromHash) ? fromHash : t.rootId ?? t.people[0]?.id ?? ''
+        applyHash()
       })
       .catch(e => {
         error = e instanceof ApiError ? { status: e.status, message: e.message } : { status: 0, message: String(e) }
@@ -50,7 +91,7 @@
         if (location.search) history.replaceState(null, '', location.pathname + location.hash)
       })
 
-    return () => window.removeEventListener('popstate', onHash)
+    return () => window.removeEventListener('popstate', applyHash)
   })
 
   const clamp = (n: number) => Math.max(1, Math.min(8, n))
@@ -74,7 +115,22 @@
           <output>{progenyDepth}</output>
           <button type="button" aria-label="Mehr Nachkommen" onclick={() => (progenyDepth = clamp(progenyDepth + 1))}>+</button>
         </div>
-        <button type="button" class="plain" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
+        <button type="button" class="plain fit" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
+        <div class="menu">
+          {#if info?.presentations.length}
+            <button type="button" class="plain present" aria-haspopup="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
+            {#if menuOpen}
+              <ul role="menu">
+                <li><button type="button" role="menuitem" onclick={() => startPresentation(null)}>Freie Navigation<small>mit Pfeiltasten durch den Baum</small></button></li>
+                {#each info.presentations as p (p.id)}
+                  <li><button type="button" role="menuitem" onclick={() => startPresentation(p.id)}>{p.title}<small>{p.stationCount} Stationen</small></button></li>
+                {/each}
+              </ul>
+            {/if}
+          {:else}
+            <button type="button" class="plain present" onclick={() => startPresentation(null)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
+          {/if}
+        </div>
         {#if tree.rootId && tree.rootId !== mainId}
           <button type="button" class="plain" aria-label="Zur Startperson" onclick={() => select(tree!.rootId!, false)}><span aria-hidden="true">⌂</span><span class="long">Zum Anfang</span></button>
         {/if}
@@ -82,6 +138,19 @@
     </header>
     <main>
       <TreeView bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} onSelect={select} />
+      {#if presenting}
+        {#key presenting}
+        <Presentation
+          people={tree.people}
+          {byId}
+          presentation={presenting.data}
+          startId={mainId}
+          startIndex={presenting.index}
+          {onPosition}
+          onExit={exitPresentation}
+        />
+        {/key}
+      {/if}
       {#if panelOpen}
         <PersonPanel id={mainId} people={byId} onSelect={select} onClose={() => (panelOpen = false)} />
       {/if}
@@ -142,6 +211,32 @@
   }
   button.plain { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }
   button:hover { border-color: var(--accent); }
+  .menu { position: relative; }
+  .menu ul {
+    position: absolute;
+    top: calc(100% + 6px);
+    right: 0;
+    min-width: 240px;
+    margin: 0;
+    padding: 4px;
+    list-style: none;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 8px 24px rgb(0 0 0 / 0.2);
+    z-index: 30;
+  }
+  .menu li button {
+    display: grid;
+    width: 100%;
+    height: auto;
+    padding: 8px 10px;
+    border: 0;
+    background: none;
+    text-align: left;
+  }
+  .menu li button:hover { background: var(--bg); }
+  .menu small { color: var(--muted); }
   main { flex: 1; min-height: 0; position: relative; overflow: hidden; }
   .message { display: grid; place-content: center; height: 100%; padding: 24px; text-align: center; }
   .message h1 { font-size: 24px; margin-bottom: 8px; }
@@ -154,8 +249,8 @@
     .stepper .short { display: inline; }
     .controls { width: 100%; flex-wrap: nowrap; gap: 6px; }
     .stepper + .stepper { margin-left: 4px; }
-    button.plain { padding: 0 10px; margin-left: auto; }
-    button.plain + button.plain { margin-left: 0; }
+    button.plain { padding: 0 10px; }
+    button.fit { margin-left: auto; }
     :global(.search) { flex-basis: 100%; max-width: none; }
   }
 </style>

@@ -1,4 +1,4 @@
-import type { AdminInfo, AdminStatus, DetailSettings, ShareLink, ShareLinkInput } from '../../../shared/types.ts'
+import type { AdminInfo, AdminPerson, AdminStatus, DetailSettings, Presentation, ShareLink, ShareLinkInput } from '../../../shared/types.ts'
 
 export class AdminError extends Error {}
 
@@ -29,6 +29,11 @@ export const admin = {
   updateLink: (id: string, input: ShareLinkInput) => request<ShareLink>('PUT', `/api/admin/links/${id}`, input),
   revokeLink: (id: string, revoked: boolean) => request<ShareLink>('POST', `/api/admin/links/${id}/revoke`, { revoked }),
   deleteLink: (id: string) => request<{ ok: true }>('DELETE', `/api/admin/links/${id}`, {}),
+  people: () => request<AdminPerson[]>('GET', '/api/admin/people'),
+  presentations: () => request<Presentation[]>('GET', '/api/admin/presentations'),
+  createPresentation: (p: Omit<Presentation, 'id'>) => request<Presentation>('POST', '/api/admin/presentations', p),
+  updatePresentation: (id: string, p: Omit<Presentation, 'id'>) => request<Presentation>('PUT', `/api/admin/presentations/${id}`, p),
+  deletePresentation: (id: string) => request<{ ok: true }>('DELETE', `/api/admin/presentations/${id}`, {}),
   logout: () => request<{ ok: true }>('POST', '/auth/logout', {}),
 }
 

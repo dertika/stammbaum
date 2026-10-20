@@ -1,48 +1,104 @@
-import { mkdtempSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import type { Config } from '../src/config.ts'
-import { fixtureLoader, ModelCache } from '../src/gramps/cache.ts'
-import { fixtureImages, ImageCache } from '../src/gramps/images.ts'
-import { buildServer } from '../src/server.ts'
+import { deriveKey } from '../src/store/crypto.ts'
+import { openDb } from '../src/store/db.ts'
+import { LinkStore } from '../src/store/links.ts'
+import { openLink, testApp } from './helpers.ts'
 
-const base: Config = {
-  port: 0, host: '127.0.0.1', dataDir: '/nonexistent', staticDir: '/nonexistent', devOpenAccess: false,
-  source: 'fixture', fixtureFile: new URL('../fixtures/familie-muster.json', import.meta.url).pathname,
-  gramps: { url: '', user: '', password: '' }, cacheTtl: 900, livingYears: 100,
-}
-const services = (config: Config) => ({
-  config,
-  cache: new ModelCache(fixtureLoader(base.fixtureFile), 900),
-  images: new ImageCache(mkdtempSync(join(tmpdir(), 'sb-')), fixtureImages()),
-})
-
-describe('GET /api/view/tree', () => {
-  it('verweigert ohne Freigabe', async () => {
-    const res = await buildServer(services(base)).inject('/api/view/tree')
-    expect(res.statusCode).toBe(401)
-    expect(res.body).not.toContain('Muster')
+describe('ohne Freigabelink', () => {
+  const { app } = testApp()
+  it('gibt keine Daten heraus', async () => {
+    for (const path of ['/api/view/tree', '/api/view/info', '/api/view/person/pi0003', '/api/view/media/mi0003/portrait']) {
+      const res = await app.inject(path)
+      expect(res.statusCode, path).toBe(401)
+      expect(res.body).not.toContain('Muster')
+    }
   })
-  it('liefert den Baum im Entwicklungsmodus', async () => {
-    const res = await buildServer(services({ ...base, devOpenAccess: true })).inject('/api/view/tree')
+  it('liefert im Entwicklungsmodus den Baum', async () => {
+    const res = await testApp({ devOpenAccess: true }).app.inject('/api/view/tree')
     expect(res.statusCode).toBe(200)
     expect(res.json().people.length).toBe(20)
   })
 })
 
-describe('GET /api/view/media', () => {
-  const app = buildServer(services({ ...base, devOpenAccess: true }))
-  it('liefert freigegebene Profilbilder', async () => {
-    const res = await app.inject('/api/view/media/mi0003/portrait')
-    expect(res.statusCode).toBe(200)
-    expect(res.headers['content-type']).toBe('image/svg+xml')
+describe('Freigabelink', () => {
+  it('setzt beim Öffnen ein HttpOnly-Cookie und leitet ohne Token weiter', async () => {
+    const { app, links } = testApp()
+    const link = links.create({ label: 'Oma', living: 'anonymize', expiresAt: null })
+    expect(link.url).toMatch(/^https:\/\/stammbaum\.example\/s\/[\w-]{43}$/)
+    const { res } = await openLink(app, link.url)
+    expect(res.statusCode).toBe(302)
+    expect(res.headers.location).toBe('/')
+    const cookie = res.cookies.find(c => c.name === 'sb_link')!
+    expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax', path: '/' })
+    expect(links.get(link.id)!.useCount).toBe(1)
   })
-  it('verweigert Bilder lebender Personen und unbekannte Arten', async () => {
-    expect((await app.inject('/api/view/media/mi0011/portrait')).statusCode).toBe(404)
-    expect((await app.inject('/api/view/media/mi0003/original')).statusCode).toBe(404)
+
+  it('anonymisiert Lebende je nach Link-Einstellung', async () => {
+    const { app, links } = testApp()
+    const anon = await openLink(app, links.create({ label: 'A', living: 'anonymize', expiresAt: null }).url)
+    const show = await openLink(app, links.create({ label: 'B', living: 'show', expiresAt: null }).url)
+    const a = await app.inject({ url: '/api/view/tree', cookies: anon.cookies })
+    const b = await app.inject({ url: '/api/view/tree', cookies: show.cookies })
+    expect(a.body).not.toContain('Peter')
+    expect(b.body).toContain('Peter')
+    expect((await app.inject({ url: '/api/view/media/mi0011/portrait', cookies: anon.cookies })).statusCode).toBe(404)
+    expect((await app.inject({ url: '/api/view/media/mi0011/portrait', cookies: show.cookies })).statusCode).toBe(200)
   })
-  it('verweigert ohne Freigabe', async () => {
-    expect((await buildServer(services(base)).inject('/api/view/media/mi0003/portrait')).statusCode).toBe(401)
+
+  it('wirkt bei Widerruf sofort', async () => {
+    const { app, links } = testApp()
+    const link = links.create({ label: 'C', living: 'show', expiresAt: null })
+    const { cookies } = await openLink(app, link.url)
+    expect((await app.inject({ url: '/api/view/tree', cookies })).statusCode).toBe(200)
+    links.setRevoked(link.id, true)
+    const res = await app.inject({ url: '/api/view/tree', cookies })
+    expect(res.statusCode).toBe(410)
+    expect(res.body).not.toContain('Muster')
+    expect((await app.inject({ url: '/api/view/media/mi0003/portrait', cookies })).statusCode).toBe(410)
+    const again = await openLink(app, link.url)
+    expect(again.res.headers.location).toBe('/?link=abgelaufen')
+  })
+
+  it('verweigert abgelaufene Links', async () => {
+    const { app, links } = testApp()
+    const link = links.create({ label: 'D', living: 'show', expiresAt: new Date(Date.now() - 1000).toISOString() })
+    const { res } = await openLink(app, link.url)
+    expect(res.headers.location).toBe('/?link=abgelaufen')
+    expect((await app.inject({ url: '/api/view/tree', cookies: { sb_link: new URL(link.url).pathname.slice(3) } })).statusCode).toBe(410)
+  })
+
+  it('verweigert unbekannte Tokens', async () => {
+    const { app } = testApp()
+    expect((await app.inject('/s/erfunden')).headers.location).toBe('/?link=ungueltig')
+    expect((await app.inject({ url: '/api/view/tree', cookies: { sb_link: 'erfunden' } })).statusCode).toBe(401)
+  })
+
+  it('respektiert die globalen Detail-Einstellungen', async () => {
+    const { app, links, settings } = testApp()
+    const { cookies } = await openLink(app, links.create({ label: 'E', living: 'show', expiresAt: null }).url)
+    settings.setDetails({ photo: false, dates: true, events: false, places: false, notes: false })
+    const tree = await app.inject({ url: '/api/view/tree', cookies })
+    expect(tree.body).not.toContain('photo')
+    expect(tree.body).not.toContain('Oberdorf')
+    const person = (await app.inject({ url: '/api/view/person/pi0008', cookies })).json()
+    expect(person).toMatchObject({ events: [], notes: [], media: [] })
+    expect((await app.inject({ url: '/api/view/media/mi0003/portrait', cookies })).statusCode).toBe(404)
+  })
+})
+
+describe('LinkStore', () => {
+  it('speichert das Token nur verschlüsselt und als Hash', () => {
+    const { links } = testApp()
+    const link = links.create({ label: 'F', living: 'show', expiresAt: null })
+    const token = new URL(link.url).pathname.slice(3)
+    const db = (links as unknown as { db: { prepare: (s: string) => { all: () => unknown[] } } }).db
+    expect(JSON.stringify(db.prepare('SELECT * FROM links').all())).not.toContain(token)
+  })
+  it('zeigt den Link bei falschem Secret nicht an', () => {
+    const db = openDb(':memory:')
+    const a = new LinkStore(db, deriveKey('a'.repeat(32), 'link-token'), 'https://x')
+    const link = a.create({ label: 'G', living: 'show', expiresAt: null })
+    const b = new LinkStore(db, deriveKey('b'.repeat(32), 'link-token'), 'https://x')
+    expect(b.get(link.id)!.url).toBe('')
   })
 })

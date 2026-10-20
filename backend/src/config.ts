@@ -25,6 +25,10 @@ function int(name: string, fallback: number): number {
 export type GrampsSource = 'api' | 'fixture'
 
 export interface Config {
+  /** Öffentliche Adresse des Dashboards, z. B. https://stammbaum.dertika.de */
+  publicUrl: string
+  /** Geheimnis für Verschlüsselung der Link-Tokens und Signatur der Sitzungen */
+  appSecret: string
   port: number
   host: string
   dataDir: string
@@ -49,7 +53,11 @@ export interface Config {
 export function loadConfig(): Config {
   const source = (env('GRAMPS_SOURCE', 'api') as GrampsSource)
   const isApi = source === 'api'
+  const appSecret = required('APP_SECRET')
+  if (appSecret.length < 32) throw new Error('APP_SECRET muss mindestens 32 Zeichen lang sein')
   return {
+    publicUrl: env('PUBLIC_URL', 'http://localhost:8080')!.replace(/\/+$/, ''),
+    appSecret,
     port: int('PORT', 8080),
     host: env('HOST', '0.0.0.0')!,
     dataDir: env('DATA_DIR', './data')!,

@@ -13,6 +13,7 @@
   let progenyDepth = $state(2)
   let view: TreeView | undefined = $state()
   let panelOpen = $state(false)
+  const linkHint = new URLSearchParams(location.search).get('link')
 
   const byId = $derived(new Map(tree?.people.map(p => [p.id, p]) ?? []))
   const known = $derived(new Set(byId.keys()))
@@ -43,6 +44,10 @@
       })
       .catch(e => {
         error = e instanceof ApiError ? { status: e.status, message: e.message } : { status: 0, message: String(e) }
+      })
+      .finally(() => {
+        // Hinweis aus /s/<token> nur einmal auswerten
+        if (location.search) history.replaceState(null, '', location.pathname + location.hash)
       })
 
     return () => window.removeEventListener('popstate', onHash)
@@ -84,10 +89,13 @@
   </div>
 {:else if error}
   <div class="message">
-    {#if error.status === 401 || error.status === 403}
+    {#if (error.status === 401 || error.status === 403) && linkHint === 'ungueltig'}
+      <h1>Link ungültig</h1>
+      <p>Dieser Einladungslink ist nicht bekannt. Bitte prüf, ob er vollständig kopiert wurde.</p>
+    {:else if error.status === 401 || error.status === 403}
       <h1>Kein Zugang</h1>
       <p>Der Stammbaum ist nur über einen persönlichen Einladungslink erreichbar.</p>
-    {:else if error.status === 410}
+    {:else if error.status === 410 || linkHint === 'abgelaufen'}
       <h1>Link abgelaufen</h1>
       <p>Dieser Einladungslink ist nicht mehr gültig. Bitte frag nach einem neuen Link.</p>
     {:else}

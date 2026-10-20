@@ -70,3 +70,29 @@ export interface ViewInfo {
   label?: string
   details: DetailSettings
 }
+
+export type LivingMode = 'show' | 'anonymize'
+
+export type LinkStatus = 'active' | 'expired' | 'revoked'
+
+/** Freigabelink, wie ihn der Admin-Bereich sieht */
+export interface ShareLink {
+  id: string
+  label: string
+  /** Vollständiger Link inkl. Token – nur im Admin-Bereich */
+  url: string
+  living: LivingMode
+  expiresAt: string | null
+  revokedAt: string | null
+  createdAt: string
+  lastUsedAt: string | null
+  useCount: number
+  status: LinkStatus
+}
+
+export interface ShareLinkInput {
+  label: string
+  living: LivingMode
+  /** ISO-Zeitpunkt oder null für unbegrenzt */
+  expiresAt: string | null
+}

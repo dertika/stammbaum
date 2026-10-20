@@ -1,0 +1,20 @@
+{
+  "name": "@stammbaum/backend",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "DEV_OPEN_ACCESS=1 GRAMPS_SOURCE=fixture node --watch src/main.ts",
+    "start": "node src/main.ts",
+    "test": "vitest run",
+    "check": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@fastify/static": "^10.1.6",
+    "fastify": "^5.12.7"
+  },
+  "devDependencies": {
+    "@types/node": "^22.20.5",
+    "typescript": "^6.0.3",
+    "vitest": "^5.0.5"
+  }
+}

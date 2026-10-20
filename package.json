@@ -1,0 +1,14 @@
+{
+  "name": "stammbaum",
+  "private": true,
+  "type": "module",
+  "workspaces": ["backend", "frontend"],
+  "scripts": {
+    "dev": "npm run dev -w backend & npm run dev -w frontend",
+    "build": "npm run build -w frontend",
+    "start": "npm run start -w backend",
+    "test": "npm test -w backend",
+    "check": "npm run check -w backend && npm run check -w frontend"
+  },
+  "engines": { "node": ">=22.18" }
+}

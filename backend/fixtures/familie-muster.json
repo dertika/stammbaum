@@ -1,0 +1,1756 @@
+{
+ "people": [
+  {
+   "handle": "pi0001",
+   "gramps_id": "I0001",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Johann",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0001b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0001d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0001"
+   ],
+   "parent_family_list": [],
+   "media_list": [
+    {
+     "ref": "mi0001",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [
+    "ni0001"
+   ],
+   "private": false
+  },
+  {
+   "handle": "pi0002",
+   "gramps_id": "I0002",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Maria",
+    "surname_list": [
+     {
+      "surname": "Huber",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0002b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0002d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0001"
+   ],
+   "parent_family_list": [
+    "ff0007"
+   ],
+   "media_list": [
+    {
+     "ref": "mi0002",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0003",
+   "gramps_id": "I0003",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Georg",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0003b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0003d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0003"
+   ],
+   "parent_family_list": [
+    "ff0001"
+   ],
+   "media_list": [
+    {
+     "ref": "mi0003",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0004",
+   "gramps_id": "I0004",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Anna",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0004b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0004d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0001"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0005",
+   "gramps_id": "I0005",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Elisabeth",
+    "surname_list": [
+     {
+      "surname": "Weber",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0005b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0005d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0003"
+   ],
+   "parent_family_list": [
+    "ff0002"
+   ],
+   "media_list": [
+    {
+     "ref": "mi0005",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0006",
+   "gramps_id": "I0006",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Friedrich",
+    "surname_list": [
+     {
+      "surname": "Weber",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0006b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0006d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0002"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0007",
+   "gramps_id": "I0007",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Katharina",
+    "surname_list": [
+     {
+      "surname": "Schmid",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0007b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0002"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0008",
+   "gramps_id": "I0008",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Heinrich",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0008b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0008d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0004"
+   ],
+   "parent_family_list": [
+    "ff0003"
+   ],
+   "media_list": [
+    {
+     "ref": "mi0008",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [
+    "ni0008"
+   ],
+   "private": false
+  },
+  {
+   "handle": "pi0009",
+   "gramps_id": "I0009",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Margarete",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0009b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0009d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0003"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0010",
+   "gramps_id": "I0010",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Ingrid",
+    "surname_list": [
+     {
+      "surname": "Lang",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0010b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0010d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0004"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0011",
+   "gramps_id": "I0011",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Peter",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0011b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0005"
+   ],
+   "parent_family_list": [
+    "ff0004"
+   ],
+   "media_list": [
+    {
+     "ref": "mi0011",
+     "rect": [
+      20,
+      5,
+      80,
+      65
+     ]
+    }
+   ],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0012",
+   "gramps_id": "I0012",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Sabine",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0012b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0008"
+   ],
+   "parent_family_list": [
+    "ff0004"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0013",
+   "gramps_id": "I0013",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Claudia",
+    "surname_list": [
+     {
+      "surname": "Berger",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0013b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0005"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0014",
+   "gramps_id": "I0014",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Thomas",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0014b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0006"
+   ],
+   "parent_family_list": [
+    "ff0005"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0015",
+   "gramps_id": "I0015",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Julia",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0015b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0005"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": true
+  },
+  {
+   "handle": "pi0016",
+   "gramps_id": "I0016",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Lena",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0016b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0006"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0017",
+   "gramps_id": "I0017",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Karl",
+    "surname_list": [
+     {
+      "surname": "Huber",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0017b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0017d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0007"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0018",
+   "gramps_id": "I0018",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Theresia",
+    "surname_list": [
+     {
+      "surname": "Maier",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0018b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0018d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0007"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0019",
+   "gramps_id": "I0019",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Martin",
+    "surname_list": [
+     {
+      "surname": "Vogel",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0019b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [
+    "ff0008"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0020",
+   "gramps_id": "I0020",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Sophie",
+    "surname_list": [
+     {
+      "surname": "Vogel",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0020b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0008"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  }
+ ],
+ "families": [
+  {
+   "handle": "ff0001",
+   "father_handle": "pi0001",
+   "mother_handle": "pi0002",
+   "child_ref_list": [
+    {
+     "ref": "pi0003"
+    },
+    {
+     "ref": "pi0004"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0001m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0002",
+   "father_handle": "pi0006",
+   "mother_handle": "pi0007",
+   "child_ref_list": [
+    {
+     "ref": "pi0005"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0002m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0003",
+   "father_handle": "pi0003",
+   "mother_handle": "pi0005",
+   "child_ref_list": [
+    {
+     "ref": "pi0008"
+    },
+    {
+     "ref": "pi0009"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0003m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0004",
+   "father_handle": "pi0008",
+   "mother_handle": "pi0010",
+   "child_ref_list": [
+    {
+     "ref": "pi0011"
+    },
+    {
+     "ref": "pi0012"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0004m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0005",
+   "father_handle": "pi0011",
+   "mother_handle": "pi0013",
+   "child_ref_list": [
+    {
+     "ref": "pi0014"
+    },
+    {
+     "ref": "pi0015"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0005m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0006",
+   "father_handle": "pi0014",
+   "mother_handle": null,
+   "child_ref_list": [
+    {
+     "ref": "pi0016"
+    }
+   ],
+   "event_ref_list": [],
+   "private": false
+  },
+  {
+   "handle": "ff0007",
+   "father_handle": "pi0017",
+   "mother_handle": "pi0018",
+   "child_ref_list": [
+    {
+     "ref": "pi0002"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0007m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0008",
+   "father_handle": "pi0019",
+   "mother_handle": "pi0012",
+   "child_ref_list": [
+    {
+     "ref": "pi0020"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0008m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  }
+ ],
+ "events": [
+  {
+   "handle": "ei0001b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     3,
+     4,
+     1872,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 696511
+   },
+   "place": "plp1",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0001d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     12,
+     1,
+     1941,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 722095
+   },
+   "place": "plp1",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0002b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1875,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 697500
+   },
+   "place": "plp2",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0002d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     8,
+     9,
+     1950,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 725687
+   },
+   "place": "plp1",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0003b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     21,
+     6,
+     1899,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 706635
+   },
+   "place": "plp1",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0003d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     2,
+     2,
+     1972,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 733648
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0004b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     14,
+     2,
+     1902,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 707620
+   },
+   "place": "plp1",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0004d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     30,
+     11,
+     1988,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 739907
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0005b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     5,
+     10,
+     1903,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 708231
+   },
+   "place": "plp4",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0005d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     17,
+     5,
+     1979,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 736360
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0006b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1870,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 695640
+   },
+   "place": "plp4",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0006d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1932,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 718704
+   },
+   "place": "plp4",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0007b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1874,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 697128
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0008b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     9,
+     8,
+     1928,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 717473
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0008d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     3,
+     3,
+     2009,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 747444
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0009b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     1,
+     12,
+     1931,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 718705
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0009d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     22,
+     7,
+     2015,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 749819
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0010b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     19,
+     3,
+     1933,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 719188
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0010d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     11,
+     11,
+     2020,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 751792
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0011b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     7,
+     5,
+     1958,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 728538
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0012b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     24,
+     9,
+     1961,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 729795
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0013b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     2,
+     1,
+     1960,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 729153
+   },
+   "place": "plp6",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0014b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     15,
+     6,
+     1987,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 739365
+   },
+   "place": "plp6",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0015b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     30,
+     8,
+     1990,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 740558
+   },
+   "place": "plp6",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0016b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     4,
+     4,
+     2018,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 750824
+   },
+   "place": "plp6",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0017b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1845,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 686340
+   },
+   "place": "plp2",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0017d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1910,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 710520
+   },
+   "place": "plp2",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0018b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1849,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 687828
+   },
+   "place": "plp2",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0018d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1921,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 714612
+   },
+   "place": "plp2",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0019b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     12,
+     12,
+     1955,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 727644
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0020b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     6,
+     7,
+     1984,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 738271
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0001m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1897,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 705684
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0002m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1899,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 706428
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0003m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1926,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 716472
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0004m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1956,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 727632
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0005m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1985,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 738420
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0007m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1870,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 695640
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0008m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1982,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 737304
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  }
+ ],
+ "places": [
+  {
+   "handle": "plp1",
+   "name": {
+    "value": "Oberdorf"
+   },
+   "placeref_list": [
+    {
+     "ref": "plp7"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "plp2",
+   "name": {
+    "value": "Unterbach"
+   },
+   "placeref_list": [
+    {
+     "ref": "plp7"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "plp3",
+   "name": {
+    "value": "Neustadt"
+   },
+   "placeref_list": [
+    {
+     "ref": "plp8"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "plp4",
+   "name": {
+    "value": "Waldheim"
+   },
+   "placeref_list": [
+    {
+     "ref": "plp8"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "plp5",
+   "name": {
+    "value": "Seeburg"
+   },
+   "placeref_list": [
+    {
+     "ref": "plp8"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "plp6",
+   "name": {
+    "value": "Bergstadt"
+   },
+   "placeref_list": [],
+   "private": false
+  },
+  {
+   "handle": "plp7",
+   "name": {
+    "value": "Landkreis Talheim"
+   },
+   "placeref_list": [],
+   "private": false
+  },
+  {
+   "handle": "plp8",
+   "name": {
+    "value": "Landkreis Hochfeld"
+   },
+   "placeref_list": [],
+   "private": false
+  }
+ ],
+ "notes": [
+  {
+   "handle": "ni0001",
+   "text": {
+    "string": "Johann war Schmied in Oberdorf und führte die Werkstatt seines Vaters weiter."
+   },
+   "type": "Person Note",
+   "private": false
+  },
+  {
+   "handle": "ni0008",
+   "text": {
+    "string": "Heinrich wanderte 1952 nach Kanada aus und kehrte 1960 zurück."
+   },
+   "type": "Person Note",
+   "private": false
+  }
+ ],
+ "media": [
+  {
+   "handle": "mi0001",
+   "mime": "image/svg+xml",
+   "desc": "Foto Johann Muster",
+   "private": false
+  },
+  {
+   "handle": "mi0002",
+   "mime": "image/svg+xml",
+   "desc": "Foto Maria Huber",
+   "private": false
+  },
+  {
+   "handle": "mi0003",
+   "mime": "image/svg+xml",
+   "desc": "Foto Georg Muster",
+   "private": false
+  },
+  {
+   "handle": "mi0005",
+   "mime": "image/svg+xml",
+   "desc": "Foto Elisabeth Weber",
+   "private": false
+  },
+  {
+   "handle": "mi0008",
+   "mime": "image/svg+xml",
+   "desc": "Foto Heinrich Muster",
+   "private": false
+  },
+  {
+   "handle": "mi0011",
+   "mime": "image/svg+xml",
+   "desc": "Foto Peter Muster",
+   "private": false
+  }
+ ],
+ "defaultPerson": "pi0011"
+}

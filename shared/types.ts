@@ -131,6 +131,8 @@ export interface AdminStatus {
   loadedAt: string | null
   people: number
   error: string | null
+  /** Letzter Fehler beim Laden eines Bildes aus Gramps Web */
+  imageError: { message: string, at: string } | null
 }
 
 /** Eine Station einer Präsentation – wie eine Folie */

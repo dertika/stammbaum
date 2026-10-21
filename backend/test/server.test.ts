@@ -142,3 +142,18 @@ describe('Migration', () => {
     expect(db.prepare('SELECT label, start_person FROM links').get()).toMatchObject({ label: 'Alt', start_person: null })
   })
 })
+
+describe('GET /api/view/media', () => {
+  it('liefert freigegebene Profilbilder als JPEG mit Sandbox-CSP', async () => {
+    const { app, links } = testApp()
+    const { cookies } = await openLink(app, links.create({ label: 'A', living: 'anonymize', expiresAt: null, presentationIds: [], startPersonId: null }).url)
+    const res = await app.inject({ url: '/api/view/media/mi0003/portrait', cookies })
+    expect(res.statusCode).toBe(200)
+    expect(res.headers['content-type']).toBe('image/jpeg')
+    expect(res.headers['content-security-policy']).toContain('sandbox')
+    expect(res.rawPayload.subarray(0, 3)).toEqual(Buffer.from([0xff, 0xd8, 0xff]))
+    // Lebende (anonymisiert) und unbekannte Arten bleiben gesperrt
+    expect((await app.inject({ url: '/api/view/media/mi0011/portrait', cookies })).statusCode).toBe(404)
+    expect((await app.inject({ url: '/api/view/media/mi0003/original', cookies })).statusCode).toBe(404)
+  })
+})

@@ -52,7 +52,10 @@ Browser ──https──▶ OpenResty (CrowdSec, *.dertika.de) ──▶ 127.0.
      komplett im JSON.
    - Bilder liefert das Backend nur aus, wenn sie zu einer für diesen Link sichtbaren
      Person gehören. Es nutzt dafür immer die verkleinerten Thumbnails von Gramps Web,
-     nie die Originale.
+     nie die Originale. Aktuelle Gramps-Web-Versionen liefern diese als AVIF; das
+     Backend wandelt sie einmalig in JPEG um, damit sie auch auf älteren Geräten
+     (z. B. iPad vor iOS 16) erscheinen, und entfernt dabei alle Metadaten.
+     Fehler beim Laden zeigt der Admin-Bereich unter *Datenstand* an.
 4. `/s/<token>` setzt ein HttpOnly-Cookie und leitet ohne Token in der URL weiter.
    Ablauf und Widerruf werden bei jeder Anfrage geprüft.
 5. In der Datenbank liegt nur der SHA-256-Hash des Tokens zum Nachschlagen. Damit

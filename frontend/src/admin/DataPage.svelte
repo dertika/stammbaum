@@ -36,6 +36,9 @@
       <div><dt>Personen</dt><dd>{status.people}</dd></div>
     </dl>
     {#if status.error}<p class="notice error">Letzter Ladeversuch fehlgeschlagen: {status.error}</p>{/if}
+    {#if status.imageError}
+      <p class="notice error">Letzter Bildfehler ({formatDateTime(status.imageError.at, true)}): {status.imageError.message}</p>
+    {/if}
     <button type="button" class="btn primary" onclick={refresh} disabled={busy}>{busy ? 'Wird geladen …' : 'Jetzt aktualisieren'}</button>
   </div>
 {/if}

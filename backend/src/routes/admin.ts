@@ -8,7 +8,7 @@ import { validatePresentation } from '../store/presentations.ts'
 import { LINK_COOKIE } from './view.ts'
 
 /** Admin-API – jede Route verlangt eine gültige OIDC-Sitzung. */
-export function adminRoutes({ config, cache, links, settings, presentations }: Services) {
+export function adminRoutes({ config, cache, images, links, settings, presentations }: Services) {
   const secure = config.publicUrl.startsWith('https://')
   const publicOrigin = new URL(config.publicUrl).origin
 
@@ -38,6 +38,7 @@ export function adminRoutes({ config, cache, links, settings, presentations }: S
         loadedAt: model?.loadedAt.toISOString() ?? null,
         people: model?.people.size ?? 0,
         error: cache.lastError?.message ?? null,
+        imageError: images.lastError,
       }
       return status
     })
@@ -45,7 +46,7 @@ export function adminRoutes({ config, cache, links, settings, presentations }: S
     app.post('/api/admin/refresh', async (_req, reply) => {
       try {
         const model = await cache.refresh()
-        return { loadedAt: model.loadedAt.toISOString(), people: model.people.size, error: null } satisfies AdminStatus
+        return { loadedAt: model.loadedAt.toISOString(), people: model.people.size, error: null, imageError: images.lastError } satisfies AdminStatus
       } catch (err) {
         return reply.code(502).send({ error: `Gramps Web nicht erreichbar: ${(err as Error).message}` })
       }

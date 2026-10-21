@@ -1,13 +1,14 @@
 import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
-import type { AdminInfo, AdminPerson, AdminStatus, DetailSettings } from '../../../shared/types.ts'
+import type { AdminInfo, AdminPerson, AdminStatus, DisplaySettings } from '../../../shared/types.ts'
 import { getSession } from '../auth/session.ts'
 import type { Services } from '../server.ts'
 import { validateInput } from '../store/links.ts'
+import { isDepth, personRef } from '../store/settings.ts'
 import { validatePresentation } from '../store/presentations.ts'
 import { LINK_COOKIE } from './view.ts'
 
 /** Admin-API – jede Route verlangt eine gültige OIDC-Sitzung. */
-export function adminRoutes({ config, cache, links, settings, presentations }: Services) {
+export function adminRoutes({ config, cache, images, links, settings, presentations }: Services) {
   const secure = config.publicUrl.startsWith('https://')
   const publicOrigin = new URL(config.publicUrl).origin
 
@@ -37,6 +38,7 @@ export function adminRoutes({ config, cache, links, settings, presentations }: S
         loadedAt: model?.loadedAt.toISOString() ?? null,
         people: model?.people.size ?? 0,
         error: cache.lastError?.message ?? null,
+        imageError: images.lastError,
       }
       return status
     })
@@ -44,18 +46,39 @@ export function adminRoutes({ config, cache, links, settings, presentations }: S
     app.post('/api/admin/refresh', async (_req, reply) => {
       try {
         const model = await cache.refresh()
-        return { loadedAt: model.loadedAt.toISOString(), people: model.people.size, error: null } satisfies AdminStatus
+        return { loadedAt: model.loadedAt.toISOString(), people: model.people.size, error: null, imageError: images.lastError } satisfies AdminStatus
       } catch (err) {
         return reply.code(502).send({ error: `Gramps Web nicht erreichbar: ${(err as Error).message}` })
       }
     })
 
-    app.get('/api/admin/settings', async () => ({ details: settings.details() }))
+    const displaySettings = (): DisplaySettings => ({
+      details: settings.details(),
+      startPersonId: settings.startPerson(),
+      ...settings.depth(),
+    })
 
-    app.put<{ Body: { details?: DetailSettings } }>('/api/admin/settings', async (req, reply) => {
-      if (!req.body?.details || typeof req.body.details !== 'object') return badRequest(reply, new Error('details fehlt'))
-      settings.setDetails(req.body.details)
-      return { details: settings.details() }
+    app.get('/api/admin/settings', async () => displaySettings())
+
+    // Teilweise Aktualisierung: fehlende Felder bleiben unverändert
+    app.put<{ Body: Partial<DisplaySettings> }>('/api/admin/settings', async (req, reply) => {
+      const b = req.body ?? {}
+      try {
+        if (b.details !== undefined && (typeof b.details !== 'object' || b.details === null)) throw new Error('Ungültige Detail-Einstellungen')
+        const depth = { ...settings.depth() }
+        for (const key of ['ancestryDepth', 'progenyDepth'] as const) {
+          if (b[key] === undefined) continue
+          if (!isDepth(b[key])) throw new Error('Die Tiefe muss zwischen 1 und 8 liegen')
+          depth[key] = b[key]
+        }
+        const start = 'startPersonId' in b ? personRef(b.startPersonId) : undefined
+        if (b.details) settings.setDetails(b.details)
+        settings.setDepth(depth)
+        if (start !== undefined) settings.setStartPerson(start)
+        return displaySettings()
+      } catch (err) {
+        return badRequest(reply, err)
+      }
     })
 
     app.get('/api/admin/links', async () => links.list())

@@ -1,9 +1,7 @@
 # Stammbaum-Dashboard – ein Container, ein Port (8080), Daten in /data
 ARG NODE_IMAGE=docker.io/library/node:22.22-alpine
 
-# Build- und Abhängigkeits-Stufen laufen immer auf der Plattform des Builders:
-# das Frontend ist statisch und alle Abhängigkeiten sind reines JavaScript
-# (SQLite kommt aus node:sqlite). So braucht ein arm64-Build keine Emulation.
+# Das Frontend ist statisch und wird immer auf der Plattform des Builders gebaut.
 FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS build
 WORKDIR /app
 COPY package.json package-lock.json ./
@@ -14,7 +12,8 @@ COPY shared shared
 COPY frontend frontend
 RUN npm run build -w frontend
 
-FROM --platform=$BUILDPLATFORM ${NODE_IMAGE} AS deps
+# Laufzeit-Abhängigkeiten pro Zielplattform: sharp bringt native Binärdateien (libvips) mit
+FROM ${NODE_IMAGE} AS deps
 WORKDIR /app
 COPY package.json package-lock.json ./
 COPY backend/package.json backend/

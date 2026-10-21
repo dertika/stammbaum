@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import type { Presentation as PresentationData, TreeResponse, ViewInfo } from '../../shared/types.ts'
+  import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
   import { ApiError, fetchInfo, fetchPresentation, fetchTree } from './lib/api.ts'
   import PersonPanel from './lib/PersonPanel.svelte'
   import Presentation from './lib/Presentation.svelte'
@@ -10,8 +10,11 @@
   let tree = $state<TreeResponse | null>(null)
   let error = $state<{ status: number, message: string } | null>(null)
   let mainId = $state('')
-  let ancestryDepth = $state(2)
-  let progenyDepth = $state(2)
+  let ancestryDepth = $state(DEFAULT_DEPTH)
+  let progenyDepth = $state(DEFAULT_DEPTH)
+  /** true, wenn der Besucher die Tiefe selbst geändert hat (im Browser gespeichert) */
+  let customDepth = $state(false)
+  const DEPTH_KEY = 'stammbaum.depth'
   let view: TreeView | undefined = $state()
   let panelOpen = $state(false)
   let info = $state<ViewInfo | null>(null)
@@ -79,6 +82,10 @@
       .then(([t, i]) => {
         tree = t
         info = i
+        const stored = storedDepth()
+        ancestryDepth = stored?.a ?? clamp(i.ancestryDepth)
+        progenyDepth = stored?.p ?? clamp(i.progenyDepth)
+        customDepth = !!stored
         const fromHash = idFromHash()
         mainId = fromHash && t.people.some(p => p.id === fromHash) ? fromHash : t.rootId ?? t.people[0]?.id ?? ''
         applyHash()
@@ -94,7 +101,34 @@
     return () => window.removeEventListener('popstate', applyHash)
   })
 
-  const clamp = (n: number) => Math.max(1, Math.min(8, n))
+  const clamp = (n: number) => Math.max(DEPTH_MIN, Math.min(DEPTH_MAX, n))
+
+  function storedDepth(): { a: number, p: number } | null {
+    try {
+      const v = JSON.parse(localStorage.getItem(DEPTH_KEY) ?? 'null')
+      return typeof v?.a === 'number' && typeof v?.p === 'number' ? { a: clamp(v.a), p: clamp(v.p) } : null
+    } catch {
+      return null
+    }
+  }
+
+  function changeDepth(a: number, p: number) {
+    ancestryDepth = clamp(a)
+    progenyDepth = clamp(p)
+    customDepth = true
+    try {
+      localStorage.setItem(DEPTH_KEY, JSON.stringify({ a: ancestryDepth, p: progenyDepth }))
+    } catch { /* z. B. privates Fenster – dann eben nur für diese Sitzung */ }
+  }
+
+  function resetDepth() {
+    ancestryDepth = info?.ancestryDepth ?? DEFAULT_DEPTH
+    progenyDepth = info?.progenyDepth ?? DEFAULT_DEPTH
+    customDepth = false
+    try {
+      localStorage.removeItem(DEPTH_KEY)
+    } catch { /* ignorieren */ }
+  }
 </script>
 
 {#if tree && mainId}
@@ -105,16 +139,19 @@
       <div class="controls" role="group" aria-label="Generationen">
         <div class="stepper" title="Generationen Vorfahren">
           <span class="long">Vorfahren</span><span class="short" aria-hidden="true">↑</span>
-          <button type="button" aria-label="Weniger Vorfahren" onclick={() => (ancestryDepth = clamp(ancestryDepth - 1))}>−</button>
+          <button type="button" aria-label="Weniger Vorfahren" onclick={() => changeDepth(ancestryDepth - 1, progenyDepth)} disabled={ancestryDepth <= DEPTH_MIN}>−</button>
           <output>{ancestryDepth}</output>
-          <button type="button" aria-label="Mehr Vorfahren" onclick={() => (ancestryDepth = clamp(ancestryDepth + 1))}>+</button>
+          <button type="button" aria-label="Mehr Vorfahren" onclick={() => changeDepth(ancestryDepth + 1, progenyDepth)} disabled={ancestryDepth >= DEPTH_MAX}>+</button>
         </div>
         <div class="stepper" title="Generationen Nachkommen">
           <span class="long">Nachkommen</span><span class="short" aria-hidden="true">↓</span>
-          <button type="button" aria-label="Weniger Nachkommen" onclick={() => (progenyDepth = clamp(progenyDepth - 1))}>−</button>
+          <button type="button" aria-label="Weniger Nachkommen" onclick={() => changeDepth(ancestryDepth, progenyDepth - 1)} disabled={progenyDepth <= DEPTH_MIN}>−</button>
           <output>{progenyDepth}</output>
-          <button type="button" aria-label="Mehr Nachkommen" onclick={() => (progenyDepth = clamp(progenyDepth + 1))}>+</button>
+          <button type="button" aria-label="Mehr Nachkommen" onclick={() => changeDepth(ancestryDepth, progenyDepth + 1)} disabled={progenyDepth >= DEPTH_MAX}>+</button>
         </div>
+        {#if customDepth && (ancestryDepth !== info?.ancestryDepth || progenyDepth !== info?.progenyDepth)}
+          <button type="button" class="plain" aria-label="Standard-Tiefe wiederherstellen" title="Standard-Tiefe wiederherstellen" onclick={resetDepth}><span aria-hidden="true">↺</span><span class="long">Standard</span></button>
+        {/if}
         <button type="button" class="plain fit" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
         <div class="menu">
           {#if info?.presentations.length}
@@ -210,7 +247,8 @@
     cursor: pointer;
   }
   button.plain { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }
-  button:hover { border-color: var(--accent); }
+  button:hover:not(:disabled) { border-color: var(--accent); }
+  button:disabled { opacity: 0.4; cursor: default; }
   .menu { position: relative; }
   .menu ul {
     position: absolute;
@@ -247,7 +285,9 @@
     h1 { display: none; }
     .long { display: none; }
     .stepper .short { display: inline; }
-    .controls { width: 100%; flex-wrap: nowrap; gap: 6px; }
+    .controls { width: 100%; gap: 6px 4px; }
+    .controls button { min-width: 30px; height: 30px; }
+    .stepper { gap: 2px; }
     .stepper + .stepper { margin-left: 4px; }
     button.plain { padding: 0 10px; }
     button.fit { margin-left: auto; }

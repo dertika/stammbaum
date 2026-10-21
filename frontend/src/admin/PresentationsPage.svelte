@@ -2,6 +2,7 @@
   import { onMount } from 'svelte'
   import type { AdminPerson, Presentation, Station } from '../../../shared/types.ts'
   import { admin } from './api.ts'
+  import PersonPicker from './PersonPicker.svelte'
 
   let list = $state<Presentation[]>([])
   let people = $state<AdminPerson[]>([])
@@ -10,15 +11,8 @@
 
   // Bearbeitung
   let editing = $state<{ id: string | null, title: string, stations: Station[] } | null>(null)
-  let query = $state('')
 
   const byId = $derived(new Map(people.map(p => [p.id, p])))
-  const normalize = (s: string) => s.toLocaleLowerCase('de').normalize('NFD').replace(/\p{Diacritic}/gu, '')
-  const matches = $derived.by(() => {
-    const words = normalize(query).split(/\s+/).filter(Boolean)
-    if (!words.length) return []
-    return people.filter(p => words.every(w => normalize(p.name).includes(w))).slice(0, 8)
-  })
 
   async function load() {
     try {
@@ -32,12 +26,10 @@
     editing = p
       ? { id: p.id, title: p.title, stations: p.stations.map(s => ({ ...s })) }
       : { id: null, title: '', stations: [] }
-    query = ''
   }
 
   function add(person: AdminPerson) {
     editing!.stations.push({ personId: person.id, title: '', text: '', ancestry: 1, progeny: 1 })
-    query = ''
   }
 
   function moveStation(i: number, step: -1 | 1) {
@@ -119,19 +111,7 @@
       {/each}
     </ol>
 
-    <div class="add">
-      <label class="field">
-        <span>Station hinzufügen</span>
-        <input type="search" bind:value={query} placeholder="Person suchen …" autocomplete="off" />
-      </label>
-      {#if matches.length}
-        <ul class="matches">
-          {#each matches as m (m.id)}
-            <li><button type="button" onclick={() => add(m)}>{m.name} <small>{m.lifespan}{m.private ? ' · privat' : ''}</small></button></li>
-          {/each}
-        </ul>
-      {/if}
-    </div>
+    <PersonPicker {people} label="Station hinzufügen" onPick={add} />
 
     <p class="muted small">Stationen zu lebenden Personen erscheinen nur bei Links, die Lebende zeigen. Texte werden unverändert angezeigt – bitte keine Angaben zu Lebenden hineinschreiben, wenn der Link anonymisiert.</p>
 
@@ -190,18 +170,6 @@
   .station-body { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 10px; }
   .station-body .wide { grid-column: 1 / -1; }
   .station-body textarea { resize: vertical; font: inherit; }
-  .add { position: relative; max-width: 420px; }
-  .matches {
-    list-style: none;
-    margin: 4px 0 0;
-    padding: 4px;
-    border: 1px solid var(--border);
-    border-radius: var(--radius);
-    background: var(--surface);
-  }
-  .matches button { width: 100%; text-align: left; padding: 8px 10px; border: 0; background: none; border-radius: 6px; cursor: pointer; }
-  .matches button:hover { background: var(--bg); }
-  .matches small { color: var(--muted); }
   @media (max-width: 640px) {
     .station-body { grid-template-columns: 1fr; }
   }

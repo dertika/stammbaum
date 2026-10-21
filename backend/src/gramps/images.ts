@@ -1,6 +1,7 @@
 import { createHash } from 'node:crypto'
 import { mkdir, readFile, rename, writeFile } from 'node:fs/promises'
 import { join } from 'node:path'
+import sharp from 'sharp'
 import type { AllowedMedia } from '../view/project.ts'
 import type { GrampsClient } from './client.ts'
 
@@ -14,7 +15,6 @@ export type ImageFetcher = (mediaId: string, media: AllowedMedia) => Promise<Ima
 /** Kantenlänge der Profilbilder (quadratisch) bzw. maximale Größe der übrigen Bilder */
 const PORTRAIT_SIZE = 400
 const IMAGE_SIZE = 1600
-const SAFE_TYPES = new Set(['image/jpeg', 'image/png', 'image/webp'])
 
 /** Holt Bilder über die Thumbnail-Endpunkte von Gramps Web (immer verkleinert, nie das Original). */
 export function grampsImages(client: GrampsClient): ImageFetcher {
@@ -30,9 +30,9 @@ export function grampsImages(client: GrampsClient): ImageFetcher {
       path = `/api/media/${h}/thumbnail/${IMAGE_SIZE}`
     }
     const res = await client.get(path)
+    // Gramps Web liefert je nach Version JPEG oder AVIF – umgewandelt wird im ImageCache
     const type = (res.headers.get('content-type') ?? '').split(';')[0].trim()
-    // Nur Rasterformate ausliefern – z. B. SVG könnte Skripte enthalten
-    if (!SAFE_TYPES.has(type)) throw new Error(`Unerwarteter Bildtyp ${type} für ${id}`)
+    if (!type.startsWith('image/')) throw new Error(`Gramps Web lieferte kein Bild (${type || 'ohne Typ'}) für ${id}`)
     return { body: Buffer.from(await res.arrayBuffer()), type }
   }
 }
@@ -48,8 +48,18 @@ export function fixtureImages(): ImageFetcher {
   }
 }
 
-const EXT: Record<string, string> = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp', 'image/svg+xml': 'svg' }
-const TYPE_BY_EXT = Object.fromEntries(Object.entries(EXT).map(([t, e]) => [e, t]))
+/**
+ * Wandelt jedes Bild in ein JPEG um: läuft auf allen Geräten (AVIF z. B. erst ab
+ * iOS 16), entfernt Metadaten wie GPS-Koordinaten und kann keine Skripte enthalten.
+ */
+export async function toJpeg(image: Image, kind: AllowedMedia['kind']): Promise<Image> {
+  const pipeline = sharp(image.body, { failOn: 'error' }).rotate()
+  const resized = kind === 'portrait'
+    ? pipeline.resize(PORTRAIT_SIZE, PORTRAIT_SIZE, { fit: 'cover', position: 'attention' })
+    : pipeline.resize(IMAGE_SIZE, IMAGE_SIZE, { fit: 'inside', withoutEnlargement: true })
+  const body = await resized.flatten({ background: '#ffffff' }).jpeg({ quality: 82, mozjpeg: true }).toBuffer()
+  return { body, type: 'image/jpeg' }
+}
 
 /**
  * Zwischenspeicher auf der Platte (im Volume). Der Schlüssel enthält die
@@ -60,6 +70,8 @@ export class ImageCache {
   private readonly fetcher: ImageFetcher
   private readonly pending = new Map<string, Promise<Image>>()
   private ready: Promise<unknown> | null = null
+  /** Letzter Fehler beim Laden eines Bildes – für die Anzeige im Admin-Bereich */
+  lastError: { message: string, at: string } | null = null
 
   constructor(dir: string, fetcher: ImageFetcher) {
     this.dir = dir
@@ -67,14 +79,19 @@ export class ImageCache {
   }
 
   private key(id: string, m: AllowedMedia): string {
-    return createHash('sha256').update(JSON.stringify([id, m.kind, m.checksum, m.rect ?? null])).digest('hex')
+    return createHash('sha256').update(JSON.stringify(['jpeg-v1', id, m.kind, m.checksum, m.rect ?? null])).digest('hex')
   }
 
   async get(id: string, media: AllowedMedia): Promise<Image> {
     const key = this.key(id, media)
     const running = this.pending.get(key)
     if (running) return running
-    const job = this.load(key, id, media).finally(() => this.pending.delete(key))
+    const job = this.load(key, id, media)
+      .catch(err => {
+        this.lastError = { message: `${id}: ${(err as Error).message}`, at: new Date().toISOString() }
+        throw err
+      })
+      .finally(() => this.pending.delete(key))
     this.pending.set(key, job)
     return job
   }
@@ -82,13 +99,11 @@ export class ImageCache {
   private async load(key: string, id: string, media: AllowedMedia): Promise<Image> {
     this.ready ??= mkdir(this.dir, { recursive: true })
     await this.ready
-    for (const [ext, type] of Object.entries(TYPE_BY_EXT)) {
-      try {
-        return { body: await readFile(join(this.dir, `${key}.${ext}`)), type }
-      } catch { /* nicht im Cache */ }
-    }
-    const image = await this.fetcher(id, media)
-    const file = join(this.dir, `${key}.${EXT[image.type] ?? 'bin'}`)
+    const file = join(this.dir, `${key}.jpg`)
+    try {
+      return { body: await readFile(file), type: 'image/jpeg' }
+    } catch { /* nicht im Cache */ }
+    const image = await toJpeg(await this.fetcher(id, media), media.kind)
     const tmp = `${file}.${process.pid}.tmp`
     await writeFile(tmp, image.body)
     await rename(tmp, file)

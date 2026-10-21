@@ -1,4 +1,4 @@
-import { DEFAULT_DETAILS, type DetailSettings } from '../../../shared/types.ts'
+import { DEFAULT_DEPTH, DEFAULT_DETAILS, DEPTH_MAX, DEPTH_MIN, type DetailSettings } from '../../../shared/types.ts'
 import type { Db } from './db.ts'
 
 /** Globale Einstellungen als JSON in einer Schlüssel-Wert-Tabelle. */
@@ -28,4 +28,31 @@ export class SettingsStore {
     const clean = Object.fromEntries(Object.keys(DEFAULT_DETAILS).map(k => [k, !!details[k as keyof DetailSettings]]))
     this.write('details', clean)
   }
+
+  /** Gramps-Handle der globalen Startperson; null = Gramps-Hauptperson */
+  startPerson(): string | null {
+    return this.read<string | null>('startPerson') ?? null
+  }
+
+  setStartPerson(id: string | null) {
+    this.write('startPerson', id)
+  }
+
+  depth(): { ancestryDepth: number, progenyDepth: number } {
+    return { ancestryDepth: DEFAULT_DEPTH, progenyDepth: DEFAULT_DEPTH, ...this.read('depth') }
+  }
+
+  setDepth(depth: { ancestryDepth: number, progenyDepth: number }) {
+    this.write('depth', { ancestryDepth: depth.ancestryDepth, progenyDepth: depth.progenyDepth })
+  }
+}
+
+export const isDepth = (v: unknown): v is number =>
+  typeof v === 'number' && Number.isInteger(v) && v >= DEPTH_MIN && v <= DEPTH_MAX
+
+/** Personen-Handle aus Admin-Eingaben: String bis 64 Zeichen, leer = null */
+export function personRef(v: unknown): string | null {
+  if (v === null || v === undefined || v === '') return null
+  if (typeof v !== 'string' || v.length > 64) throw new Error('Ungültige Startperson')
+  return v
 }

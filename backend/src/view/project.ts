@@ -8,9 +8,12 @@ export interface ViewOptions {
   living: 'show' | 'anonymize'
   details: DetailSettings
   livingYears: number
-  rootGrampsId?: string
+  /** Startperson in absteigender Priorität (Link, Admin, ROOT_PERSON); danach Gramps-Hauptperson */
+  rootCandidates?: RootCandidate[]
   now?: Date
 }
+
+export type RootCandidate = { id: string } | { grampsId: string }
 
 /** Ein Bild, das für diesen Zugang ausgeliefert werden darf. */
 export interface AllowedMedia {
@@ -89,11 +92,39 @@ export function project(model: Model, options: ViewOptions): Projection {
     return s
   })
 
-  const configuredRoot = options.rootGrampsId ? visible.find(p => p.grampsId === options.rootGrampsId)?.id : undefined
-  const rootId = configuredRoot
-    ?? (model.defaultPerson && visibleIds.has(model.defaultPerson) ? model.defaultPerson : visible[0]?.id ?? null)
+  const rootId = resolveRoot(model, visible, open, options.rootCandidates ?? [])
 
   return { tree: { generatedAt: model.loadedAt.toISOString(), rootId, people }, open, media }
+}
+
+/**
+ * Startperson: der erste sichtbare Kandidat, sonst die Gramps-Hauptperson.
+ * Ist sie für diesen Zugang anonymisiert, startet die Ansicht beim nächsten
+ * nicht anonymisierten Vorfahren (Generation für Generation).
+ */
+function resolveRoot(model: Model, visible: Person[], open: Map<string, Person>, candidates: RootCandidate[]): string | null {
+  const byGrampsId = (gid: string) => visible.find(p => p.grampsId === gid)?.id
+  const ids = [
+    ...candidates.map(c => 'id' in c ? c.id : byGrampsId(c.grampsId)),
+    model.defaultPerson ?? undefined,
+  ]
+  const visibleIds = new Set(visible.map(p => p.id))
+  const start = ids.find((id): id is string => !!id && visibleIds.has(id))
+  if (!start) return open.keys().next().value ?? visible[0]?.id ?? null
+  if (open.has(start)) return start
+
+  const seen = new Set([start])
+  let generation = [start]
+  while (generation.length) {
+    const parents = generation
+      .flatMap(id => model.people.get(id)?.parents ?? [])
+      .filter(id => visibleIds.has(id) && !seen.has(id))
+    const found = parents.find(id => open.has(id))
+    if (found) return found
+    parents.forEach(id => seen.add(id))
+    generation = parents
+  }
+  return open.keys().next().value ?? start
 }
 
 /** Details einer Person für den Klick im Baum; null, wenn nicht sichtbar. */

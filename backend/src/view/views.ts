@@ -14,7 +14,7 @@ export class ProjectionCache {
       this.model = model
       this.entries.clear()
     }
-    const key = JSON.stringify([options.living, options.details, options.livingYears, options.rootGrampsId])
+    const key = JSON.stringify([options.living, options.details, options.livingYears, options.rootCandidates])
     let projection = this.entries.get(key)
     if (!projection) {
       projection = project(model, options)

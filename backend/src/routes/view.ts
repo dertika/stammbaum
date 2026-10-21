@@ -2,7 +2,7 @@ import type { FastifyInstance, FastifyReply, FastifyRequest } from 'fastify'
 import type { Presentation, PresentationSummary, ViewInfo } from '../../../shared/types.ts'
 import { getSession } from '../auth/session.ts'
 import type { Services } from '../server.ts'
-import { mediaKey, personDetails, type Projection, type ViewOptions } from '../view/project.ts'
+import { mediaKey, personDetails, type Projection, type RootCandidate, type ViewOptions } from '../view/project.ts'
 import { ProjectionCache } from '../view/views.ts'
 
 export const LINK_COOKIE = 'sb_link'
@@ -23,7 +23,12 @@ export function viewRoutes({ config, cache, images, links, settings, presentatio
 
   /** Ermittelt bei jeder Anfrage neu, was gesehen werden darf – Widerruf und Ablauf wirken sofort. */
   function resolveAccess(req: FastifyRequest): Resolved {
-    const base = { livingYears: config.livingYears, rootGrampsId: config.rootPerson, details: settings.details() }
+    // Startperson: Link → Admin-Einstellung → ROOT_PERSON → (Gramps-Hauptperson in project())
+    const globalRoots: RootCandidate[] = [
+      ...(settings.startPerson() ? [{ id: settings.startPerson()! }] : []),
+      ...(config.rootPerson ? [{ grampsId: config.rootPerson }] : []),
+    ]
+    const base = { livingYears: config.livingYears, rootCandidates: globalRoots, details: settings.details() }
     const token = req.cookies[LINK_COOKIE]
     const check = token ? links.check(token) : null
     if (check) {
@@ -31,7 +36,11 @@ export function viewRoutes({ config, cache, images, links, settings, presentatio
         return {
           access: {
             label: check.link.label,
-            options: { ...base, living: check.link.living },
+            options: {
+              ...base,
+              living: check.link.living,
+              rootCandidates: check.link.start_person ? [{ id: check.link.start_person }, ...globalRoots] : globalRoots,
+            },
             presentationIds: JSON.parse(check.link.presentation_ids) as string[],
           },
         }
@@ -100,7 +109,7 @@ export function viewRoutes({ config, cache, images, links, settings, presentatio
         title: p.title,
         stationCount: visibleStations(p, v.projection).length,
       }))
-      const info: ViewInfo = { label: v.access.label, details: v.access.options.details, presentations: list }
+      const info: ViewInfo = { label: v.access.label, details: v.access.options.details, presentations: list, ...settings.depth() }
       return info
     })
 

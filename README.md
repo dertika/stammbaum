@@ -193,8 +193,23 @@ Jede Variable kann alternativ als Datei übergeben werden (`NAME_FILE=/run/secre
 | `OIDC_ADMIN_GROUP` | – | optional: nur diese Gruppe darf in den Admin-Bereich |
 | `CACHE_TTL` | `900` | Sekunden, bis die Daten im Hintergrund neu geladen werden |
 | `LIVING_YEARS` | `100` | ohne Todesangabe gilt als lebend, wer jünger ist |
-| `ROOT_PERSON` | Gramps-Hauptperson | Gramps-ID der Startperson, z. B. `I0042` |
+| `ROOT_PERSON` | Gramps-Hauptperson | Gramps-ID einer Startperson, z. B. `I0042` – nur Fallback, wenn im Admin keine gesetzt ist |
 | `PORT` / `DATA_DIR` | `8080` / `/data` | HTTP-Port und Datenverzeichnis im Container |
+
+## Startansicht
+
+Welche Person beim Öffnen im Mittelpunkt steht, entscheidet die erste passende Angabe:
+
+1. Person aus der URL (`#/p/<id>`), z. B. aus einem Lesezeichen
+2. Startperson des Freigabelinks (Admin → Freigabelinks → Bearbeiten)
+3. globale Startperson (Admin → Anzeige → Startansicht)
+4. `ROOT_PERSON`
+5. Hauptperson aus Gramps (*Startperson festlegen* in Gramps)
+
+Wird die Startperson für einen Link als lebend anonymisiert, beginnt die Ansicht beim
+nächsten sichtbaren Vorfahren. Die Standard-Tiefe (Vorgabe: 3 Generationen Vorfahren
+und Nachkommen) lässt sich ebenfalls unter *Anzeige* einstellen. Was Besucher mit +/−
+ändern, merkt sich ihr Browser; „Standard“ setzt es zurück.
 
 ## Bedienung im Präsentationsmodus
 

@@ -1,4 +1,4 @@
-import type { AdminInfo, AdminPerson, AdminStatus, DetailSettings, Presentation, ShareLink, ShareLinkInput } from '../../../shared/types.ts'
+import type { AdminInfo, AdminPerson, AdminStatus, DisplaySettings, Presentation, ShareLink, ShareLinkInput } from '../../../shared/types.ts'
 
 export class AdminError extends Error {}
 
@@ -22,8 +22,8 @@ export const admin = {
   me: () => request<AdminInfo>('GET', '/api/admin/me'),
   status: () => request<AdminStatus>('GET', '/api/admin/status'),
   refresh: () => request<AdminStatus>('POST', '/api/admin/refresh', {}),
-  settings: () => request<{ details: DetailSettings }>('GET', '/api/admin/settings'),
-  saveSettings: (details: DetailSettings) => request<{ details: DetailSettings }>('PUT', '/api/admin/settings', { details }),
+  settings: () => request<DisplaySettings>('GET', '/api/admin/settings'),
+  saveSettings: (settings: Partial<DisplaySettings>) => request<DisplaySettings>('PUT', '/api/admin/settings', settings),
   links: () => request<ShareLink[]>('GET', '/api/admin/links'),
   createLink: (input: ShareLinkInput) => request<ShareLink>('POST', '/api/admin/links', input),
   updateLink: (id: string, input: ShareLinkInput) => request<ShareLink>('PUT', `/api/admin/links/${id}`, input),

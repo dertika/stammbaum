@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import type { LinkStatus, LivingMode, ShareLink, ShareLinkInput } from '../../../shared/types.ts'
 import { decrypt, encrypt, hashToken, newToken } from './crypto.ts'
+import { personRef } from './settings.ts'
 import type { Db } from './db.ts'
 
 interface Row {
@@ -15,6 +16,7 @@ interface Row {
   last_used_at: string | null
   use_count: number
   presentation_ids: string
+  start_person: string | null
 }
 
 /** Ergebnis der Prüfung eines Tokens */
@@ -43,7 +45,7 @@ export function validateInput(input: unknown): ShareLinkInput {
   const presentationIds = Array.isArray(i.presentationIds)
     ? [...new Set(i.presentationIds.filter((p): p is string => typeof p === 'string'))]
     : []
-  return { label, living: i.living, expiresAt, presentationIds }
+  return { label, living: i.living, expiresAt, presentationIds, startPersonId: personRef(i.startPersonId) }
 }
 
 /**
@@ -81,6 +83,7 @@ export class LinkStore {
       useCount: row.use_count,
       status: status(row, now),
       presentationIds: JSON.parse(row.presentation_ids) as string[],
+      startPersonId: row.start_person,
     }
   }
 
@@ -97,16 +100,16 @@ export class LinkStore {
   create(input: ShareLinkInput): ShareLink {
     const token = newToken()
     const id = randomUUID()
-    this.db.prepare(`INSERT INTO links (id, label, token_hash, token_enc, living, expires_at, created_at, presentation_ids)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?)`)
+    this.db.prepare(`INSERT INTO links (id, label, token_hash, token_enc, living, expires_at, created_at, presentation_ids, start_person)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`)
       .run(id, input.label, hashToken(token), encrypt(this.key, token), input.living, input.expiresAt, new Date().toISOString(),
-        JSON.stringify(input.presentationIds ?? []))
+        JSON.stringify(input.presentationIds ?? []), input.startPersonId ?? null)
     return this.get(id)!
   }
 
   update(id: string, input: ShareLinkInput): ShareLink | null {
-    this.db.prepare('UPDATE links SET label = ?, living = ?, expires_at = ?, presentation_ids = ? WHERE id = ?')
-      .run(input.label, input.living, input.expiresAt, JSON.stringify(input.presentationIds ?? []), id)
+    this.db.prepare('UPDATE links SET label = ?, living = ?, expires_at = ?, presentation_ids = ?, start_person = ? WHERE id = ?')
+      .run(input.label, input.living, input.expiresAt, JSON.stringify(input.presentationIds ?? []), input.startPersonId ?? null, id)
     return this.get(id)
   }
 

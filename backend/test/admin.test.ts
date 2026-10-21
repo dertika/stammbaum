@@ -63,7 +63,22 @@ describe('Admin-Bereich', () => {
     expect((await app.inject({ url: '/api/admin/links', cookies })).json()).toHaveLength(0)
 
     const settings = await app.inject({ method: 'PUT', url: '/api/admin/settings', cookies, headers: json, payload: { details: { photo: false, dates: true, events: true, places: true, notes: false, extra: 1 } } })
-    expect(settings.json()).toEqual({ details: { photo: false, dates: true, events: true, places: true, notes: false } })
+    expect(settings.json()).toEqual({
+      details: { photo: false, dates: true, events: true, places: true, notes: false },
+      startPersonId: null, ancestryDepth: 3, progenyDepth: 3,
+    })
+
+    // Teilweise Aktualisierung lässt die übrigen Felder stehen
+    const partial = await app.inject({ method: 'PUT', url: '/api/admin/settings', cookies, headers: json, payload: { startPersonId: 'pi0003', progenyDepth: 5 } })
+    expect(partial.json()).toMatchObject({ details: { photo: false }, startPersonId: 'pi0003', ancestryDepth: 3, progenyDepth: 5 })
+    for (const bad of [{ ancestryDepth: 0 }, { progenyDepth: 9 }, { ancestryDepth: 2.5 }, { startPersonId: 42 }]) {
+      const res = await app.inject({ method: 'PUT', url: '/api/admin/settings', cookies, headers: json, payload: bad })
+      expect(res.statusCode, JSON.stringify(bad)).toBe(400)
+    }
+    expect((await app.inject({ url: '/api/admin/settings', cookies })).json()).toMatchObject({ startPersonId: 'pi0003', progenyDepth: 5 })
+
+    const withStart = await app.inject({ method: 'POST', url: '/api/admin/links', cookies, headers: json, payload: { label: 'Zweig', living: 'show', expiresAt: null, startPersonId: 'pi0017' } })
+    expect(withStart.json()).toMatchObject({ startPersonId: 'pi0017' })
   })
 
   it('verlangt JSON bei ändernden Anfragen (CSRF-Schutz)', async () => {
@@ -76,7 +91,7 @@ describe('Admin-Bereich', () => {
   it('zeigt die Vorschau eines Links', async () => {
     const { app, links } = testApp({ devOpenAccess: true, adminDevLogin: true })
     const cookies = await login(app)
-    const link = links.create({ label: 'Vorschau', living: 'anonymize', expiresAt: null, presentationIds: [] })
+    const link = links.create({ label: 'Vorschau', living: 'anonymize', expiresAt: null, presentationIds: [], startPersonId: null })
     const res = await app.inject({ url: `/api/admin/links/${link.id}/preview`, cookies })
     expect(res.statusCode).toBe(302)
     const viewCookie = res.cookies.find(c => c.name === 'sb_link')!

@@ -14,7 +14,7 @@ describe('Präsentationen', () => {
     const { app, links, presentations } = testApp()
     const p = presentations.create(validatePresentation({ title: 'Familienfest', stations }))
     const other = presentations.create(validatePresentation({ title: 'Geheim', stations }))
-    const { cookies } = await openLink(app, links.create({ label: 'X', living: 'anonymize', expiresAt: null, presentationIds: [p.id] }).url)
+    const { cookies } = await openLink(app, links.create({ label: 'X', living: 'anonymize', expiresAt: null, presentationIds: [p.id], startPersonId: null }).url)
 
     const info = (await app.inject({ url: '/api/view/info', cookies })).json()
     expect(info.presentations).toEqual([{ id: p.id, title: 'Familienfest', stationCount: 2 }])
@@ -29,7 +29,7 @@ describe('Präsentationen', () => {
   it('zeigt Stationen Lebender bei Links mit sichtbaren Lebenden', async () => {
     const { app, links, presentations } = testApp()
     const p = presentations.create(validatePresentation({ title: 'F', stations }))
-    const { cookies } = await openLink(app, links.create({ label: 'X', living: 'show', expiresAt: null, presentationIds: [p.id] }).url)
+    const { cookies } = await openLink(app, links.create({ label: 'X', living: 'show', expiresAt: null, presentationIds: [p.id], startPersonId: null }).url)
     const res = (await app.inject({ url: `/api/view/presentations/${p.id}`, cookies })).json()
     expect(res.stations.map((s: { personId: string }) => s.personId)).toEqual(['pi0001', 'pi0011', 'pi0003'])
   })

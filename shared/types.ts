@@ -70,6 +70,22 @@ export interface ViewInfo {
   label?: string
   details: DetailSettings
   presentations: PresentationSummary[]
+  /** Standard-Tiefe der Baumansicht */
+  ancestryDepth: number
+  progenyDepth: number
+}
+
+export const DEPTH_MIN = 1
+export const DEPTH_MAX = 8
+export const DEFAULT_DEPTH = 3
+
+/** Einstellungen unter „Anzeige“ im Admin-Bereich */
+export interface DisplaySettings {
+  details: DetailSettings
+  /** Gramps-Handle der globalen Startperson; null = Gramps-Hauptperson */
+  startPersonId: string | null
+  ancestryDepth: number
+  progenyDepth: number
 }
 
 export type LivingMode = 'show' | 'anonymize'
@@ -90,6 +106,8 @@ export interface ShareLink {
   useCount: number
   status: LinkStatus
   presentationIds: string[]
+  /** Eigene Startperson dieses Links; null = globale Einstellung */
+  startPersonId: string | null
 }
 
 export interface ShareLinkInput {
@@ -99,6 +117,8 @@ export interface ShareLinkInput {
   expiresAt: string | null
   /** Präsentationen, die über diesen Link abrufbar sind */
   presentationIds: string[]
+  /** Eigene Startperson dieses Links; null = globale Einstellung */
+  startPersonId: string | null
 }
 
 export interface AdminInfo {

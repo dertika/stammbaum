@@ -86,3 +86,29 @@ describe('project mit abgeschalteten Details', () => {
     expect(JSON.stringify(georg)).not.toContain('Oberdorf')
   })
 })
+
+describe('Startperson', () => {
+  const root = (o: Partial<ViewOptions>) => project(model, opts(o)).tree.rootId
+
+  it('nimmt ohne Vorgaben die Gramps-Hauptperson', () => {
+    expect(root({ living: 'show' })).toBe('pi0011')
+  })
+  it('hält die Reihenfolge der Kandidaten ein', () => {
+    expect(root({ living: 'show', rootCandidates: [{ id: 'pi0003' }, { grampsId: 'I0001' }] })).toBe('pi0003')
+    expect(root({ living: 'show', rootCandidates: [{ grampsId: 'I0001' }] })).toBe('pi0001')
+  })
+  it('überspringt private und unbekannte Kandidaten', () => {
+    expect(root({ living: 'show', rootCandidates: [{ id: 'pi0015' }, { id: 'gibtsnicht' }, { grampsId: 'I0002' }] })).toBe('pi0002')
+  })
+  it('weicht bei anonymisierter Startperson auf den nächsten sichtbaren Vorfahren aus', () => {
+    // Peter (lebend) → Vater Heinrich
+    expect(root({ living: 'anonymize' })).toBe('pi0008')
+    // Lena → Thomas → Peter (alle lebend) → Heinrich
+    expect(root({ living: 'anonymize', rootCandidates: [{ id: 'pi0016' }] })).toBe('pi0008')
+  })
+  it('nimmt ohne sichtbare Vorfahren die erste nicht anonymisierte Person', () => {
+    // Claudia Berger (lebend) hat keine Eltern im Baum
+    const r = root({ living: 'anonymize', rootCandidates: [{ id: 'pi0013' }] })
+    expect(project(model, opts()).open.has(r!)).toBe(true)
+  })
+})

@@ -27,6 +27,7 @@ const MIGRATIONS = [
     updated_at TEXT NOT NULL
   );
   ALTER TABLE links ADD COLUMN presentation_ids TEXT NOT NULL DEFAULT '[]';`,
+  `ALTER TABLE links ADD COLUMN start_person TEXT;`,
 ]
 
 export type Db = DatabaseSync

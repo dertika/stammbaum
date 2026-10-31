@@ -111,6 +111,7 @@
     <label class="field">
       <span>Bezeichnung (z. B. für wen der Link ist)</span>
       <input bind:value={label} required maxlength="120" placeholder="Familie Huber" />
+      <small class="hint">Sichtbar für Empfänger, die mehrere Links geöffnet haben (Menü „Stammbaum wechseln“).</small>
     </label>
     <fieldset>
       <legend>Lebende Personen</legend>
@@ -178,6 +179,7 @@
   h1 { margin: 0 0 4px; font-size: 24px; }
   h2 { margin: 0; font-size: 18px; }
   .muted { color: var(--muted); margin: 0; }
+  .hint { color: var(--muted); font-size: 12px; }
   .form { display: grid; gap: 14px; margin-bottom: 16px; max-width: 520px; }
   fieldset { border: 0; padding: 0; margin: 0; display: grid; gap: 6px; }
   legend { font-size: 13px; color: var(--muted); margin-bottom: 4px; }

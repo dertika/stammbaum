@@ -73,6 +73,19 @@ export interface ViewInfo {
   /** Standard-Tiefe der Baumansicht */
   ancestryDepth: number
   progenyDepth: number
+  /** Admin-Vorschau eines Links aktiv */
+  preview: boolean
+  /** ID des Links, über den gerade angesehen wird (null: Admin/Entwicklung) */
+  linkId: string | null
+}
+
+/** Ein Link, den dieser Browser schon geöffnet hat – ohne Token */
+export interface KnownLink {
+  id: string
+  label: string
+  status: LinkStatus
+  /** gerade aktiv */
+  current: boolean
 }
 
 export const DEPTH_MIN = 1

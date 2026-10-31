@@ -131,6 +131,13 @@ export class LinkStore {
     return s === 'active' ? { status: s, link: row } : { status: s }
   }
 
+  /** Bezeichnung und Status zu einem Token, auch für abgelaufene oder widerrufene Links */
+  lookup(token: string, now = new Date()): { id: string, label: string, status: LinkStatus } | null {
+    if (!token || token.length > 100) return null
+    const row = this.db.prepare('SELECT * FROM links WHERE token_hash = ?').get(hashToken(token)) as unknown as Row | undefined
+    return row ? { id: row.id, label: row.label, status: status(row, now) } : null
+  }
+
   /** Zählt Aufrufe über /s/<token> (nicht jede API-Anfrage) */
   touch(id: string) {
     this.db.prepare('UPDATE links SET last_used_at = ?, use_count = use_count + 1 WHERE id = ?').run(new Date().toISOString(), id)

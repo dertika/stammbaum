@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { openLink, testApp } from './helpers.ts'
+import { tokenOf, testApp } from './helpers.ts'
 
 async function login(app: ReturnType<typeof testApp>['app']) {
   const res = await app.inject('/auth/login?returnTo=/admin/links')
@@ -94,9 +94,9 @@ describe('Admin-Bereich', () => {
     const link = links.create({ label: 'Vorschau', living: 'anonymize', expiresAt: null, presentationIds: [], startPersonId: null })
     const res = await app.inject({ url: `/api/admin/links/${link.id}/preview`, cookies })
     expect(res.statusCode).toBe(302)
-    const viewCookie = res.cookies.find(c => c.name === 'sb_link')!
-    const { cookies: expected } = await openLink(app, link.url)
-    expect(viewCookie.value).toBe(expected.sb_link)
+    // Vorschau setzt ein eigenes Cookie und lässt die eigenen Links in Ruhe
+    expect(res.cookies.map(c => c.name)).toEqual(['sb_preview'])
+    expect(res.cookies[0].value).toBe(tokenOf(link.url))
   })
 })
 

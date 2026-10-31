@@ -1,7 +1,8 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
-  import { ApiError, fetchInfo, fetchPresentation, fetchTree } from './lib/api.ts'
+  import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, type KnownLink, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
+  import { ApiError, endPreview, fetchInfo, fetchKnownLinks, fetchPresentation, fetchTree, forgetKnownLink, openKnownLink } from './lib/api.ts'
+  import KnownLinks from './lib/KnownLinks.svelte'
   import PersonPanel from './lib/PersonPanel.svelte'
   import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
@@ -21,6 +22,29 @@
   let presenting = $state<{ data: PresentationData | null, index: number } | null>(null)
   let menuOpen = $state(false)
   const linkHint = new URLSearchParams(location.search).get('link')
+  let knownLinks = $state<KnownLink[]>([])
+  let linksMenuOpen = $state(false)
+  const validKnown = $derived(knownLinks.filter(k => k.status === 'active'))
+
+  /** Anderen bekannten Link aktivieren – neu laden, weil sich Daten und Personen ändern */
+  async function switchLink(id: string) {
+    try {
+      await openKnownLink(id)
+      location.href = '/'
+    } catch {
+      knownLinks = await fetchKnownLinks().catch(() => knownLinks)
+    }
+  }
+
+  async function forgetLink(id: string) {
+    await forgetKnownLink(id).catch(() => {})
+    knownLinks = knownLinks.filter(k => k.id !== id)
+  }
+
+  async function stopPreview() {
+    await endPreview().catch(() => {})
+    location.href = '/'
+  }
 
   const byId = $derived(new Map(tree?.people.map(p => [p.id, p]) ?? []))
   const known = $derived(new Set(byId.keys()))
@@ -78,6 +102,7 @@
   onMount(() => {
     window.addEventListener('popstate', applyHash)
 
+    fetchKnownLinks().then(k => (knownLinks = k)).catch(() => {})
     Promise.all([fetchTree(), fetchInfo()])
       .then(([t, i]) => {
         tree = t
@@ -133,6 +158,16 @@
 
 {#if tree && mainId}
   <div class="layout">
+    {#if info?.preview}
+      <div class="banner" role="status">
+        <span>Vorschau: so sieht <strong>{info.label}</strong> den Stammbaum</span>
+        <button type="button" onclick={stopPreview}>Vorschau beenden</button>
+      </div>
+    {:else if linkHint === 'ungueltig' || linkHint === 'abgelaufen'}
+      <div class="banner" role="status">
+        <span>Der geöffnete Link ist {linkHint === 'ungueltig' ? 'ungültig' : 'nicht mehr gültig'} – angezeigt wird {info?.label ? `„${info.label}“` : 'der zuletzt genutzte Stammbaum'}.</span>
+      </div>
+    {/if}
     <header>
       <h1>Stammbaum</h1>
       <PersonSearch people={tree.people} onSelect={select} />
@@ -168,6 +203,20 @@
             <button type="button" class="plain present" onclick={() => startPresentation(null)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
           {/if}
         </div>
+        {#if validKnown.length > 1 && !info?.preview}
+          <div class="menu">
+            <button type="button" class="plain" aria-haspopup="menu" aria-expanded={linksMenuOpen} title="Stammbaum wechseln" aria-label="Stammbaum wechseln" onclick={() => (linksMenuOpen = !linksMenuOpen)}>
+              <span aria-hidden="true">⇄</span><span class="long">{validKnown.find(k => k.current)?.label ?? 'Wechseln'}</span>
+            </button>
+            {#if linksMenuOpen}
+              <ul role="menu">
+                {#each validKnown as k (k.id)}
+                  <li><button type="button" role="menuitemradio" aria-checked={k.current} disabled={k.current} onclick={() => switchLink(k.id)}>{k.label}{#if k.current}<small>aktuell</small>{/if}</button></li>
+                {/each}
+              </ul>
+            {/if}
+          </div>
+        {/if}
         {#if tree.rootId && tree.rootId !== mainId}
           <button type="button" class="plain" aria-label="Zur Startperson" onclick={() => select(tree!.rootId!, false)}><span aria-hidden="true">⌂</span><span class="long">Zum Anfang</span></button>
         {/if}
@@ -202,11 +251,14 @@
       <h1>Kein Zugang</h1>
       <p>Der Stammbaum ist nur über einen persönlichen Einladungslink erreichbar.</p>
     {:else if error.status === 410 || linkHint === 'abgelaufen'}
-      <h1>Link abgelaufen</h1>
-      <p>Dieser Einladungslink ist nicht mehr gültig. Bitte frag nach einem neuen Link.</p>
+      <h1>Link nicht mehr gültig</h1>
+      <p>Dieser Einladungslink ist abgelaufen oder wurde zurückgezogen. Bitte frag nach einem neuen Link.</p>
     {:else}
       <h1>Der Stammbaum konnte nicht geladen werden</h1>
       <p>Bitte versuch es später noch einmal.</p>
+    {/if}
+    {#if knownLinks.length && (error.status === 401 || error.status === 403 || error.status === 410)}
+      <KnownLinks links={knownLinks} onOpen={switchLink} onForget={forgetLink} />
     {/if}
   </div>
 {:else}
@@ -249,6 +301,19 @@
   button.plain { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }
   button:hover:not(:disabled) { border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
+  .banner {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    justify-content: center;
+    gap: 6px 12px;
+    padding: 8px 16px;
+    background: var(--accent);
+    color: var(--surface);
+    font-size: 14px;
+    text-align: center;
+  }
+  .banner button { height: 28px; padding: 0 12px; border-color: transparent; background: var(--surface); color: var(--text); }
   .menu { position: relative; }
   .menu ul {
     position: absolute;
@@ -276,7 +341,7 @@
   .menu li button:hover { background: var(--bg); }
   .menu small { color: var(--muted); }
   main { flex: 1; min-height: 0; position: relative; overflow: hidden; }
-  .message { display: grid; place-content: center; height: 100%; padding: 24px; text-align: center; }
+  .message { display: grid; place-content: center; justify-items: center; height: 100%; padding: 24px; text-align: center; }
   .message h1 { font-size: 24px; margin-bottom: 8px; }
   .message p { color: var(--muted); max-width: 32em; }
 

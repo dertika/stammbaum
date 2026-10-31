@@ -5,7 +5,7 @@ import type { Services } from '../server.ts'
 import { validateInput } from '../store/links.ts'
 import { isDepth, personRef } from '../store/settings.ts'
 import { validatePresentation } from '../store/presentations.ts'
-import { LINK_COOKIE } from './view.ts'
+import { PREVIEW_COOKIE } from './view.ts'
 
 /** Admin-API – jede Route verlangt eine gültige OIDC-Sitzung. */
 export function adminRoutes({ config, cache, images, links, settings, presentations }: Services) {
@@ -152,7 +152,8 @@ export function adminRoutes({ config, cache, images, links, settings, presentati
       const link = links.get(req.params.id)
       if (!link?.url) return reply.code(404).send({ error: 'Link nicht gefunden' })
       const token = new URL(link.url).pathname.split('/').pop()!
-      reply.setCookie(LINK_COOKIE, token, { path: '/', httpOnly: true, secure, sameSite: 'lax', maxAge: 3600 })
+      // Eigenes Cookie: die Links, die der Admin selbst geöffnet hat, bleiben unangetastet
+      reply.setCookie(PREVIEW_COOKIE, token, { path: '/', httpOnly: true, secure, sameSite: 'lax', maxAge: 3600 })
       return reply.redirect('/')
     })
   }

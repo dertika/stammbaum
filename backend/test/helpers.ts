@@ -33,10 +33,20 @@ export function testApp(overrides: Partial<Config> = {}) {
   return { ...services, app: buildServer(services) }
 }
 
-/** Öffnet einen Freigabelink und gibt das gesetzte Cookie zurück. */
-export async function openLink(app: ReturnType<typeof buildServer>, url: string) {
-  const res = await app.inject(new URL(url).pathname)
-  const cookie = res.cookies.find(c => c.name === 'sb_link')
-  const cookies: Record<string, string> = cookie?.value ? { sb_link: cookie.value } : {}
-  return { res, cookies }
+/** Übernimmt die Set-Cookie-Antworten in ein Cookie-Glas (leerer Wert = gelöscht). */
+export function applyCookies(jar: Record<string, string>, res: { cookies: { name: string, value: string }[] }) {
+  const next = { ...jar }
+  for (const c of res.cookies) {
+    if (c.value) next[c.name] = c.value
+    else delete next[c.name]
+  }
+  return next
 }
+
+/** Öffnet einen Freigabelink (optional mit vorhandenen Cookies) und gibt die neuen Cookies zurück. */
+export async function openLink(app: ReturnType<typeof buildServer>, url: string, jar: Record<string, string> = {}) {
+  const res = await app.inject({ url: new URL(url).pathname, cookies: jar })
+  return { res, cookies: applyCookies(jar, res) }
+}
+
+export const tokenOf = (url: string) => new URL(url).pathname.split('/').pop()!

@@ -28,7 +28,7 @@ describe('Freigabelink', () => {
     const { res } = await openLink(app, link.url)
     expect(res.statusCode).toBe(302)
     expect(res.headers.location).toBe('/')
-    const cookie = res.cookies.find(c => c.name === 'sb_link')!
+    const cookie = res.cookies.find(c => c.name === 'sb_links')!
     expect(cookie).toMatchObject({ httpOnly: true, secure: true, sameSite: 'Lax', path: '/' })
     expect(links.get(link.id)!.useCount).toBe(1)
   })

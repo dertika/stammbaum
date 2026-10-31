@@ -56,8 +56,13 @@ Browser ──https──▶ OpenResty (CrowdSec, *.dertika.de) ──▶ 127.0.
      Backend wandelt sie einmalig in JPEG um, damit sie auch auf älteren Geräten
      (z. B. iPad vor iOS 16) erscheinen, und entfernt dabei alle Metadaten.
      Fehler beim Laden zeigt der Admin-Bereich unter *Datenstand* an.
-4. `/s/<token>` setzt ein HttpOnly-Cookie und leitet ohne Token in der URL weiter.
-   Ablauf und Widerruf werden bei jeder Anfrage geprüft.
+4. `/s/<token>` merkt sich den Link in einem HttpOnly-Cookie und leitet ohne Token in
+   der URL weiter. Ablauf und Widerruf werden bei jeder Anfrage geprüft.
+   Der Browser behält bis zu 10 geöffnete Links: `/` öffnet den zuletzt genutzten gültigen,
+   bei mehreren gibt es das Menü „Stammbaum wechseln“, und ungültig gewordene Links
+   erscheinen auf der Startseite mit Hinweis. JavaScript sieht dabei nie ein Token,
+   nur Bezeichnung und Status. Die Admin-Vorschau nutzt ein eigenes Cookie und
+   verändert diese Liste nicht.
 5. In der Datenbank liegt nur der SHA-256-Hash des Tokens zum Nachschlagen. Damit
    der Admin-Bereich den Link erneut anzeigen kann, liegt das Token zusätzlich
    AES-256-GCM-verschlüsselt vor. Den Schlüssel leitet das Backend aus `APP_SECRET` ab.

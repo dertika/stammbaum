@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
   import { select } from 'd3-selection'
-  import { curveBasis, line } from 'd3-shape'
   import { zoom, zoomIdentity, type ZoomBehavior, type ZoomTransform } from 'd3-zoom'
   import 'd3-transition'
   import { FULL_CARD_H as CARD_H, FULL_CARD_W as CARD_W, type PersonSummary } from '../../../shared/types.ts'
@@ -41,7 +40,8 @@
   let transform = $state<ZoomTransform>(zoomIdentity)
   let zoomer: ZoomBehavior<SVGSVGElement, unknown> | undefined
 
-  const path = line().curve(curveBasis)
+  /** Rechtwinkliger Linienzug (vom Server so verlegt) als SVG-Pfad */
+  const path = (points: [number, number][]) => `M${points.map(p => p.join(',')).join('L')}`
 
   /** Sichtbarer Ausschnitt in Layout-Koordinaten, mit etwas Rand */
   const view = $derived.by(() => {
@@ -56,7 +56,6 @@
   })
   // Nur zeichnen, was zu sehen ist – sonst wird es bei tausenden Personen zäh
   const visiblePeople = $derived(layout?.people.filter(p => p.x >= view.x0 && p.x <= view.x1 && p.y >= view.y0 && p.y <= view.y1) ?? [])
-  const visibleFamilies = $derived(layout?.families.filter(f => f.x >= view.x0 && f.x <= view.x1 && f.y >= view.y0 && f.y <= view.y1) ?? [])
   const visibleLinks = $derived((layout?.links ?? []).filter(l => l.maxX >= view.x0 && l.minX <= view.x1 && l.maxY >= view.y0 && l.minY <= view.y1))
   /** Detailstufe nach Zoom: weit draußen nur Kästchen, nah dran mit Fotos */
   const detail = $derived(transform.k < 0.22 ? 'blocks' : transform.k < 0.45 ? 'text' : 'full')
@@ -110,7 +109,7 @@
           links: res.links.map(l => {
             const xs = l.points.map(p => p[0])
             const ys = l.points.map(p => p[1])
-            return { d: path(l.points) ?? '', minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) }
+            return { d: path(l.points), minX: Math.min(...xs), maxX: Math.max(...xs), minY: Math.min(...ys), maxY: Math.max(...ys) }
           }),
         }
         requestAnimationFrame(() => {
@@ -143,9 +142,6 @@
     <g transform="translate({transform.x},{transform.y}) scale({transform.k})">
       {#each visibleLinks as l, i (i)}
         <path class="link" d={l.d} />
-      {/each}
-      {#each visibleFamilies as f, i (i)}
-        <circle class="family" cx={f.x} cy={f.y} r="5" />
       {/each}
       {#each visiblePeople as n (n.id)}
         {@const p = n.person}
@@ -197,8 +193,7 @@
   .full { position: relative; width: 100%; height: 100%; overflow: hidden; background: var(--bg); }
   svg { display: block; width: 100%; height: 100%; cursor: grab; touch-action: none; }
   svg:active { cursor: grabbing; }
-  .link { fill: none; stroke: var(--link); stroke-width: 1.5px; }
-  .family { fill: var(--link); }
+  .link { fill: none; stroke: var(--muted); stroke-width: 1.5px; stroke-linejoin: miter; stroke-linecap: square; }
   .card { cursor: pointer; }
   .card rect { fill: var(--unknown); stroke: var(--border); }
   .card-M rect { fill: var(--male); }

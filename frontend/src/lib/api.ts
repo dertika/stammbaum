@@ -1,4 +1,4 @@
-import type { KnownLink, PersonDetails, Presentation, TreeResponse, ViewInfo } from '../../../shared/types.ts'
+import type { FullLayout, KnownLink, PersonDetails, Presentation, TreeResponse, ViewInfo } from '../../../shared/types.ts'
 
 export class ApiError extends Error {
   status: number
@@ -35,3 +35,5 @@ export const fetchKnownLinks = () => getJson<KnownLink[]>('/api/view/links')
 export const openKnownLink = (id: string) => send('POST', `/api/view/links/${encodeURIComponent(id)}/open`)
 export const forgetKnownLink = (id: string) => send('DELETE', `/api/view/links/${encodeURIComponent(id)}`)
 export const endPreview = () => send('DELETE', '/api/view/preview')
+/** Gesamtbaum-Layout; `pending`, solange der Server noch rechnet */
+export const fetchLayout = () => getJson<FullLayout | { status: 'pending' }>('/api/view/layout')

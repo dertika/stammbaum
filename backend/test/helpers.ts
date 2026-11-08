@@ -10,6 +10,8 @@ import { openDb } from '../src/store/db.ts'
 import { LinkStore } from '../src/store/links.ts'
 import { PresentationStore } from '../src/store/presentations.ts'
 import { SettingsStore } from '../src/store/settings.ts'
+import { layoutAll } from '../src/view/fullLayout.ts'
+import { LayoutCache } from '../src/view/layouts.ts'
 
 export const baseConfig: Config = {
   publicUrl: 'https://stammbaum.example', appSecret: 'x'.repeat(32),
@@ -29,6 +31,8 @@ export function testApp(overrides: Partial<Config> = {}) {
     links: new LinkStore(db, deriveKey(config.appSecret, 'link-token'), config.publicUrl),
     settings: new SettingsStore(db),
     presentations: new PresentationStore(db),
+    // In Tests ohne Worker-Thread rechnen
+    layouts: new LayoutCache(async (people, coord) => layoutAll(people, coord)),
   }
   return { ...services, app: buildServer(services) }
 }

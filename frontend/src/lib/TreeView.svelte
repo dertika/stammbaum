@@ -51,6 +51,18 @@
       </div>`
   }
 
+  /** Für den PDF-Export: alle gerade dargestellten Karten (Mittelpunkte) und Linien */
+  export function exportData(): { cards: { person: PersonSummary, x: number, y: number }[], links: string[] } | null {
+    if (!chart) return null
+    type Node = { x: number, y: number, data: { to_add?: boolean, _new_rel_data?: unknown, data?: { person?: PersonSummary } } }
+    const nodes = (chart.store.getTree()?.data ?? []) as unknown as Node[]
+    const cards = nodes
+      .filter(n => n.data.data?.person && !n.data.to_add && !n.data._new_rel_data)
+      .map(n => ({ person: n.data.data!.person!, x: n.x, y: n.y }))
+    const links = [...container.querySelectorAll('path.link')].map(p => p.getAttribute('d') ?? '').filter(Boolean)
+    return { cards, links }
+  }
+
   /** Zoom-Steuerung von außen: Baum einpassen bzw. Hauptperson mittig. */
   export function fit() {
     chart?.updateTree({ tree_position: 'fit' })

@@ -10,6 +10,10 @@ bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Date
 - **Ansichten „Liste“ und „Gesamt“:** Liste aller Personen (filtern, sortieren nach Name
   oder Geburtsjahr) und ein Gesamtbaum mit allen Personen in Generationen, inklusive
   eingeheirateter Familien. Im Baum klappt „Alle“ sämtliche Generationen der Hauptperson auf.
+- **PDF-Export** (Knopf ⤓ PDF) für Baum, Gesamtbaum und Liste: Papierformat A4–A0 wählbar,
+  Hoch- oder Querformat automatisch nach der Form des Baums; gedruckt werden Portrait,
+  Name, Geburts- und Sterbedatum (nur, was der jeweilige Link zeigen darf). Das PDF
+  entsteht im Browser als Vektorgrafik mit eingebetteter Schrift (Noto Sans, OFL).
 - **Präsentationsmodus:** Vollbild für Beamer und Fernseher mit großer Schrift und
   hohem Kontrast. Steuerung per Pfeiltasten und Presenter-Fernbedienung. Es gibt
   einen freien Modus und Präsentationen mit festen Stationen wie Folien.
@@ -212,9 +216,11 @@ Jede Variable kann alternativ als Datei übergeben werden (`NAME_FILE=/run/secre
 Der Gesamtbaum (`#/gesamt`) zeigt alle nicht privaten Personen auf einmal; lebende
 erscheinen je nach Link anonymisiert. Die Anordnung (Sugiyama-Verfahren mit
 [d3-dag](https://github.com/erikbrinkman/d3-dag)) berechnet das Backend einmal in einem
-Worker-Thread und hält sie im Speicher. Sie hängt nur von der Familienstruktur ab und gilt
+Worker-Thread und hält sie im Speicher. Die Linien sind rechtwinklig wie in einem
+gezeichneten Stammbaum (Partnerleiste, Geschwisterleiste) und verlaufen nur in den
+Zwischenräumen, nie hinter Karten; Paare mit nur einer Ehe stehen immer nebeneinander. Sie hängt nur von der Familienstruktur ab und gilt
 daher für alle Links; neu gerechnet wird nur, wenn sich in Gramps Personen oder Beziehungen
-ändern. Richtwerte: 300 Personen ≈ 0,3 s, 1500 ≈ 7 s, 3000 ≈ 30 s. Ab 4000 Personen wird
+ändern. Richtwerte: 600 Personen ≈ 0,4 s, 1500 ≈ 3 s, 3000 ≈ 17 s. Ab 4000 Personen wird
 ein schnelleres, etwas unruhigeres Verfahren verwendet. Während der Berechnung zeigt die
 Seite einen Hinweis und lädt automatisch nach.
 

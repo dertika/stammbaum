@@ -156,18 +156,27 @@ describe('Rechtwinklige Linien', () => {
     it(`${name}: keine Linie läuft durch eine Karte`, () => {
       const halfW = 210 / 2
       const halfH = 64 / 2
+      // Karten nach Reihen gruppieren: ein Stück muss nur gegen die Reihen geprüft werden,
+      // deren Höhe es überdeckt (sonst Millionen Vergleiche – auf CI zu langsam)
+      const rows = new Map<number, { id: string, x: number }[]>()
+      for (const p of l.people) rows.set(p.y, [...(rows.get(p.y) ?? []), { id: p.id, x: p.x }])
+      const rowYs = [...rows.keys()].sort((a, b) => a - b)
+      const violations: string[] = []
       for (const link of l.links) {
         for (let i = 1; i < link.points.length; i++) {
           const [a, b] = [link.points[i - 1], link.points[i]]
           const [x1, x2] = [Math.min(a[0], b[0]), Math.max(a[0], b[0])]
           const [y1, y2] = [Math.min(a[1], b[1]), Math.max(a[1], b[1])]
-          for (const p of l.people) {
+          for (const y of rowYs) {
             // echtes Inneres der Karte (Ränder dürfen berührt werden – dort beginnen die Linien)
-            const inside = x2 > p.x - halfW + 0.5 && x1 < p.x + halfW - 0.5 && y2 > p.y - halfH + 0.5 && y1 < p.y + halfH - 0.5
-            expect(inside, `${JSON.stringify([a, b])} durch ${p.id}`).toBe(false)
+            if (y2 <= y - halfH + 0.5 || y1 >= y + halfH - 0.5) continue
+            for (const p of rows.get(y)!) {
+              if (x2 > p.x - halfW + 0.5 && x1 < p.x + halfW - 0.5) violations.push(`${JSON.stringify([a, b])} durch ${p.id}`)
+            }
           }
         }
       }
+      expect(violations).toEqual([])
     })
 
     it(`${name}: Paare mit nur einer Ehe stehen direkt nebeneinander`, () => {

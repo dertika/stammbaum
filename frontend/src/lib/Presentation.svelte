@@ -3,7 +3,7 @@
   import type { PersonSummary, Presentation } from '../../../shared/types.ts'
   import { fullName, lifespan } from './format.ts'
   import { TreeNavigator } from './navigation.ts'
-  import TreeView from './TreeView.svelte'
+  import FocusTree from './FocusTree.svelte'
 
   interface Props {
     people: PersonSummary[]
@@ -107,7 +107,7 @@
 <div class="presentation" class:idle bind:this={root} onmousemove={wake} role="application" aria-label="Präsentation">
   <!-- Bühne endet über der Beschriftung, damit diese keine Karten verdeckt -->
   <div class="stage" style="bottom: {station?.text ? 30 : 20}vh">
-    <TreeView
+    <FocusTree
       {people}
       {mainId}
       ancestryDepth={ancestry}

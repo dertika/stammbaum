@@ -78,3 +78,53 @@ export class LayoutCache {
     return this.state
   }
 }
+
+/** Bis zu dieser Größe die ruhigere, aber langsamere Anordnung */
+const FOCUS_SIMPLEX_LIMIT = 400
+
+/**
+ * Layouts für die Baumansicht (Ausschnitt um eine Person). Klein genug, um je Anfrage
+ * im Worker gerechnet zu werden; die letzten Ergebnisse werden je Datenstand gemerkt.
+ */
+export class FocusLayoutCache {
+  private readonly compute: LayoutComputer
+  private readonly max: number
+  private model: Model | null = null
+  private input: LayoutPerson[] = []
+  private structure = ''
+  private readonly entries = new Map<string, Promise<FullLayout>>()
+
+  constructor(compute: LayoutComputer = workerComputer, max = 200) {
+    this.compute = compute
+    this.max = max
+  }
+
+  private prepare(model: Model) {
+    if (model === this.model) return
+    this.model = model
+    this.input = layoutInput(model)
+    const structure = createHash('sha256').update(JSON.stringify(this.input)).digest('hex')
+    // Nur bei geänderter Familienstruktur sind die gemerkten Layouts ungültig
+    if (structure !== this.structure) this.entries.clear()
+    this.structure = structure
+  }
+
+  /** null, wenn die Person im (nicht privaten) Baum nicht vorkommt */
+  get(model: Model, focus: string, up: number, down: number, subset: (people: LayoutPerson[]) => LayoutPerson[]): Promise<FullLayout> | null {
+    this.prepare(model)
+    if (!this.input.some(p => p.id === focus)) return null
+    const key = `${focus}|${up}|${down}`
+    let entry = this.entries.get(key)
+    if (entry) {
+      // als zuletzt benutzt markieren
+      this.entries.delete(key)
+    } else {
+      const people = subset(this.input)
+      entry = this.compute(people, people.length > FOCUS_SIMPLEX_LIMIT ? 'greedy' : 'simplex')
+      entry.catch(() => this.entries.delete(key))
+    }
+    this.entries.set(key, entry)
+    while (this.entries.size > this.max) this.entries.delete(this.entries.keys().next().value!)
+    return entry
+  }
+}

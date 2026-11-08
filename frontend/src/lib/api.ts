@@ -37,3 +37,8 @@ export const forgetKnownLink = (id: string) => send('DELETE', `/api/view/links/$
 export const endPreview = () => send('DELETE', '/api/view/preview')
 /** Gesamtbaum-Layout; `pending`, solange der Server noch rechnet */
 export const fetchLayout = () => getJson<FullLayout | { status: 'pending' }>('/api/view/layout')
+/** Baumansicht: Ausschnitt um eine Person; Tiefe `Infinity` = alle Generationen */
+export const fetchFocusLayout = (id: string, up: number, down: number, signal?: AbortSignal) => {
+  const d = (n: number) => (Number.isFinite(n) ? String(n) : 'all')
+  return getJson<FullLayout>(`/api/view/layout/focus/${encodeURIComponent(id)}?up=${d(up)}&down=${d(down)}`, signal)
+}

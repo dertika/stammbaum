@@ -7,7 +7,7 @@
   import PersonPanel from './lib/PersonPanel.svelte'
   import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
-  import TreeView from './lib/TreeView.svelte'
+  import FocusTree from './lib/FocusTree.svelte'
   import ExportDialog, { type ExportPayload } from './lib/export/ExportDialog.svelte'
   import { fullName } from './lib/format.ts'
 
@@ -21,7 +21,7 @@
   /** Alle Generationen der Hauptperson aufklappen */
   let expandAll = $state(false)
   const DEPTH_KEY = 'stammbaum.depth'
-  let view: TreeView | undefined = $state()
+  let view: FocusTree | undefined = $state()
   type ExportData = { cards: { person: PersonSummary, x: number, y: number }[], links: string[], linePoints?: [number, number][] }
   let fullView: { focus: (id: string) => void, exportData: () => ExportData | null } | undefined = $state()
   let listView: PeopleList | undefined = $state()
@@ -33,16 +33,14 @@
       const groups = listView?.exportGroups()
       return groups ? { kind: 'list', data: { title: 'Stammbaum – Personenliste', groups } } : null
     }
-    // Druckkarten so groß, wie der Abstand im jeweiligen Layout erlaubt
+    // Baum und Gesamtbaum nutzen dieselbe Anordnung und Kartengröße
     const data = mode === 'all' ? fullView?.exportData() : view?.exportData()
     if (!data) return null
     const main = byId.get(mainId)
     const title = mode === 'all' ? 'Stammbaum – Gesamtansicht' : `Stammbaum – ${main ? fullName(main) : ''}`
     return {
       kind: 'tree',
-      data: mode === 'all'
-        ? { title, ...data, cardW: FULL_CARD_W, cardH: FULL_CARD_H }
-        : { title, ...data, cardW: 236, cardH: 80 },
+      data: { title, ...data, cardW: FULL_CARD_W, cardH: FULL_CARD_H },
     }
   }
   // Gesamtbaum samt Layout-Bibliothek erst laden, wenn er gebraucht wird
@@ -295,7 +293,7 @@
           <FullTree bind:this={fullView} people={tree.people} focusId={mainId} onOpen={select} />
         {/await}
       {:else}
-        <TreeView bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} {expandAll} onSelect={select} />
+        <FocusTree bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} {expandAll} onSelect={select} />
       {/if}
       {#if presenting}
         {#key presenting}

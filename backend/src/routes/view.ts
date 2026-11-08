@@ -3,6 +3,7 @@ import type { KnownLink, Presentation, PresentationSummary, ViewInfo } from '../
 import { getSession } from '../auth/session.ts'
 import type { Services } from '../server.ts'
 import { mediaKey, personDetails, type Projection, type RootCandidate, type ViewOptions } from '../view/project.ts'
+import { relativesSubset } from '../view/relatives.ts'
 import { ProjectionCache } from '../view/views.ts'
 
 /** Alle Links, die dieser Browser geöffnet hat – zuletzt genutzter zuerst, Tokens mit „.“ getrennt */
@@ -36,7 +37,7 @@ type Resolved = { access: Access } | { denied: 401 | 410 }
 type ActiveLink = Extract<ReturnType<Services['links']['check']>, { status: 'active' }>['link']
 
 /** Routen für die Ansicht der Familie: alles nur über einen gültigen Freigabelink. */
-export function viewRoutes({ config, cache, images, links, settings, presentations, layouts }: Services) {
+export function viewRoutes({ config, cache, images, links, settings, presentations, layouts, focusLayouts }: Services) {
   const projections = new ProjectionCache()
   const secure = config.publicUrl.startsWith('https://')
 
@@ -219,6 +220,29 @@ export function viewRoutes({ config, cache, images, links, settings, presentatio
       if (state.status === 'ready') return state.layout
       if (state.status === 'pending') return reply.code(202).send({ status: 'pending' })
       return reply.code(500).send({ error: 'Der Gesamtbaum konnte nicht berechnet werden' })
+    })
+
+    // Baumansicht: Ausschnitt um eine Person (Vorfahren mit Geschwistern, Nachkommen …)
+    app.get<{ Params: { id: string }, Querystring: { up?: string, down?: string } }>('/api/view/layout/focus/:id', async (req, reply) => {
+      const v = await view(req, reply)
+      if (!v) return reply
+      const depth = (value: string | undefined, fallback: number) => {
+        if (value === undefined) return fallback
+        if (value === 'all') return Infinity
+        const n = Number(value)
+        return Number.isInteger(n) && n >= 0 && n <= 50 ? n : null
+      }
+      const up = depth(req.query.up, 3)
+      const down = depth(req.query.down, 3)
+      if (up === null || down === null) return reply.code(400).send({ error: 'Ungültige Tiefe' })
+      const layout = focusLayouts.get(v.model, req.params.id, up, down, people => relativesSubset(people, req.params.id, up, down))
+      if (!layout) return reply.code(404).send({ error: 'Person nicht gefunden' })
+      try {
+        return await layout
+      } catch (err) {
+        req.log.error({ err }, 'Baum-Layout fehlgeschlagen')
+        return reply.code(500).send({ error: 'Der Baum konnte nicht berechnet werden' })
+      }
     })
 
     app.get('/api/view/tree', async (req, reply) => {

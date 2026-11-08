@@ -66,7 +66,7 @@
 </div>
 
 <style>
-  .search { position: relative; flex: 1; min-width: 0; max-width: 360px; }
+  .search { position: relative; flex: 1; min-width: 180px; max-width: 360px; }
   input {
     width: 100%;
     padding: 8px 12px;

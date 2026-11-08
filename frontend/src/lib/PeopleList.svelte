@@ -61,6 +61,11 @@
     }
     return out
   })
+
+  /** Für den PDF-Export: genau die gefilterte, sortierte und gruppierte Liste */
+  export function exportGroups() {
+    return groups.map(g => ({ label: g.label, people: g.items.map(e => e.person) }))
+  }
 </script>
 
 <div class="list-view">

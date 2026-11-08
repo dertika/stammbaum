@@ -10,6 +10,10 @@ bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Date
 - **Ansichten „Liste“ und „Gesamt“:** Liste aller Personen (filtern, sortieren nach Name
   oder Geburtsjahr) und ein Gesamtbaum mit allen Personen in Generationen, inklusive
   eingeheirateter Familien. Im Baum klappt „Alle“ sämtliche Generationen der Hauptperson auf.
+- **PDF-Export** (Knopf ⤓ PDF) für Baum, Gesamtbaum und Liste: Papierformat A4–A0 wählbar,
+  Hoch- oder Querformat automatisch nach der Form des Baums; gedruckt werden Portrait,
+  Name, Geburts- und Sterbedatum (nur, was der jeweilige Link zeigen darf). Das PDF
+  entsteht im Browser als Vektorgrafik mit eingebetteter Schrift (Noto Sans, OFL).
 - **Präsentationsmodus:** Vollbild für Beamer und Fernseher mit großer Schrift und
   hohem Kontrast. Steuerung per Pfeiltasten und Presenter-Fernbedienung. Es gibt
   einen freien Modus und Präsentationen mit festen Stationen wie Folien.

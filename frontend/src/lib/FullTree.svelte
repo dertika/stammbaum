@@ -67,6 +67,16 @@
     else sel.call(zoomer.transform, t)
   }
 
+  /** Für den PDF-Export: alle Personen und Linien des Gesamtbaums */
+  export function exportData() {
+    if (!layout) return null
+    return {
+      cards: layout.people.map(p => ({ person: p.person, x: p.x, y: p.y })),
+      links: layout.links.map(l => l.d),
+      linePoints: layout.links.flatMap(l => [[l.minX, l.minY], [l.maxX, l.maxY]] as [number, number][]),
+    }
+  }
+
   /** Ganzen Baum einpassen */
   export function fitAll(animate = true) {
     if (!layout || !width || !height) return

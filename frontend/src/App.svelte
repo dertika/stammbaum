@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onMount } from 'svelte'
-  import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, type KnownLink, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
+  import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, FULL_CARD_H, FULL_CARD_W, type KnownLink, type PersonSummary, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
   import { ApiError, endPreview, fetchInfo, fetchKnownLinks, fetchPresentation, fetchTree, forgetKnownLink, openKnownLink } from './lib/api.ts'
   import KnownLinks from './lib/KnownLinks.svelte'
   import PeopleList from './lib/PeopleList.svelte'
@@ -8,6 +8,8 @@
   import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
   import TreeView from './lib/TreeView.svelte'
+  import ExportDialog, { type ExportPayload } from './lib/export/ExportDialog.svelte'
+  import { fullName } from './lib/format.ts'
 
   let tree = $state<TreeResponse | null>(null)
   let error = $state<{ status: number, message: string } | null>(null)
@@ -20,7 +22,29 @@
   let expandAll = $state(false)
   const DEPTH_KEY = 'stammbaum.depth'
   let view: TreeView | undefined = $state()
-  let fullView: { focus: (id: string) => void } | undefined = $state()
+  type ExportData = { cards: { person: PersonSummary, x: number, y: number }[], links: string[], linePoints?: [number, number][] }
+  let fullView: { focus: (id: string) => void, exportData: () => ExportData | null } | undefined = $state()
+  let listView: PeopleList | undefined = $state()
+  let exporting = $state(false)
+
+  /** Daten der aktuellen Ansicht für den PDF-Export */
+  function prepareExport(): ExportPayload | null {
+    if (mode === 'list') {
+      const groups = listView?.exportGroups()
+      return groups ? { kind: 'list', data: { title: 'Stammbaum – Personenliste', groups } } : null
+    }
+    // Druckkarten so groß, wie der Abstand im jeweiligen Layout erlaubt
+    const data = mode === 'all' ? fullView?.exportData() : view?.exportData()
+    if (!data) return null
+    const main = byId.get(mainId)
+    const title = mode === 'all' ? 'Stammbaum – Gesamtansicht' : `Stammbaum – ${main ? fullName(main) : ''}`
+    return {
+      kind: 'tree',
+      data: mode === 'all'
+        ? { title, ...data, cardW: FULL_CARD_W, cardH: FULL_CARD_H }
+        : { title, ...data, cardW: 236, cardH: 80 },
+    }
+  }
   // Gesamtbaum samt Layout-Bibliothek erst laden, wenn er gebraucht wird
   const loadFullTree = () => import('./lib/FullTree.svelte')
   /** Baum um die Hauptperson, Liste aller Personen oder Gesamtbaum */
@@ -226,6 +250,7 @@
         {/if}
         <button type="button" class="plain fit" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
         {/if}
+        <button type="button" class="plain" aria-label="Als PDF speichern" title="Als PDF speichern" onclick={() => (exporting = true)}><span aria-hidden="true">⤓</span><span class="long">PDF</span></button>
         <div class="menu">
           {#if info?.presentations.length}
             <button type="button" class="plain present" aria-haspopup="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
@@ -262,7 +287,7 @@
     </header>
     <main>
       {#if mode === 'list'}
-        <PeopleList people={tree.people} onOpen={select} />
+        <PeopleList bind:this={listView} people={tree.people} onOpen={select} />
       {:else if mode === 'all'}
         {#await loadFullTree()}
           <p class="loading-view">Gesamtbaum wird geladen …</p>
@@ -284,6 +309,9 @@
           onExit={exitPresentation}
         />
         {/key}
+      {/if}
+      {#if exporting}
+        <ExportDialog prepare={prepareExport} onClose={() => (exporting = false)} />
       {/if}
       {#if panelOpen}
         <PersonPanel id={mainId} people={byId} onSelect={select} onClose={() => (panelOpen = false)} />

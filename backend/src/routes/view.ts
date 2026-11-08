@@ -36,7 +36,7 @@ type Resolved = { access: Access } | { denied: 401 | 410 }
 type ActiveLink = Extract<ReturnType<Services['links']['check']>, { status: 'active' }>['link']
 
 /** Routen für die Ansicht der Familie: alles nur über einen gültigen Freigabelink. */
-export function viewRoutes({ config, cache, images, links, settings, presentations }: Services) {
+export function viewRoutes({ config, cache, images, links, settings, presentations, layouts }: Services) {
   const projections = new ProjectionCache()
   const secure = config.publicUrl.startsWith('https://')
 
@@ -209,6 +209,16 @@ export function viewRoutes({ config, cache, images, links, settings, presentatio
       if (!p) return reply.code(404).send({ error: 'Präsentation nicht gefunden' })
       const result: Presentation = { id: p.id, title: p.title, stations: visibleStations(p, v.projection) }
       return result
+    })
+
+    // Gesamtbaum: nur Positionen und Linien, Namen kommen aus /api/view/tree
+    app.get('/api/view/layout', async (req, reply) => {
+      const v = await view(req, reply)
+      if (!v) return reply
+      const state = layouts.get(v.model)
+      if (state.status === 'ready') return state.layout
+      if (state.status === 'pending') return reply.code(202).send({ status: 'pending' })
+      return reply.code(500).send({ error: 'Der Gesamtbaum konnte nicht berechnet werden' })
     })
 
     app.get('/api/view/tree', async (req, reply) => {

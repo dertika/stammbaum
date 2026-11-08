@@ -15,14 +15,17 @@
     onSelect: (id: string) => void
     /** Präsentation: große Karten, hoher Kontrast, Ausschnitt immer eingepasst */
     variant?: 'normal' | 'present'
+    /** Alle Generationen der Hauptperson zeigen (Tiefe unbegrenzt) */
+    expandAll?: boolean
   }
 
-  let { people, mainId, ancestryDepth, progenyDepth, onSelect, variant = 'normal' }: Props = $props()
+  let { people, mainId, ancestryDepth, progenyDepth, onSelect, variant = 'normal', expandAll = false }: Props = $props()
   const present = $derived(variant === 'present')
 
   let container: HTMLDivElement
   let chart: Chart | undefined
   let shownMain: string | undefined
+  let shownExpand = false
 
   function toChartData(list: PersonSummary[]) {
     return list.map(p => ({
@@ -78,15 +81,20 @@
   // Fokuswechsel und Tiefe von außen (Klick, Suche, URL)
   $effect(() => {
     const id = mainId
-    const up = ancestryDepth
-    const down = progenyDepth
+    const all = expandAll
+    // family-chart begrenzt nur bei endlicher Tiefe
+    const up = all ? Infinity : ancestryDepth
+    const down = all ? Infinity : progenyDepth
     if (!chart) return
     chart.setAncestryDepth(up).setProgenyDepth(down)
     const changed = id !== shownMain
     if (changed) chart.updateMainId(id)
-    // Präsentation: immer passend einrahmen; sonst Hauptperson mittig, Zoom bei Tiefenänderung behalten
-    chart.updateTree({ initial: false, tree_position: present ? 'fit' : changed ? 'main_to_middle' : 'inherit' })
+    // Präsentation und „alle Generationen“: passend einrahmen; sonst Hauptperson mittig,
+    // Zoom bei Tiefenänderung behalten
+    const fitAll = present || (all && (changed || !shownExpand))
+    chart.updateTree({ initial: false, tree_position: fitAll ? 'fit' : changed ? 'main_to_middle' : 'inherit' })
     shownMain = id
+    shownExpand = all
   })
 </script>
 

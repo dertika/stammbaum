@@ -177,3 +177,17 @@ export interface AdminPerson {
   lifespan: string
   private: boolean
 }
+
+/** Fertig berechnete Anordnung des Gesamtbaums (nur Struktur, keine Namen) */
+export interface FullLayout {
+  width: number
+  height: number
+  /** Personen-Mittelpunkte */
+  people: { id: string, x: number, y: number }[]
+  /** Familienknoten (Verbindungspunkt zwischen Eltern und Kindern) */
+  families: { x: number, y: number }[]
+  links: { points: [number, number][] }[]
+}
+
+export const FULL_CARD_W = 210
+export const FULL_CARD_H = 64

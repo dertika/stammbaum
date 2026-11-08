@@ -1,6 +1,6 @@
 <script lang="ts">
   import type { PersonSummary } from '../../../shared/types.ts'
-  import { fullName, lifespan } from './format.ts'
+  import { fullName, lifespan, normalize } from './format.ts'
 
   interface Props {
     people: PersonSummary[]
@@ -12,8 +12,6 @@
   let query = $state('')
   let open = $state(false)
   let active = $state(0)
-
-  const normalize = (s: string) => s.toLocaleLowerCase('de').normalize('NFD').replace(/\p{Diacritic}/gu, '')
 
   const index = $derived(people
     .filter(p => !p.anonymized)

@@ -9,6 +9,7 @@ import { openDb } from './store/db.ts'
 import { LinkStore } from './store/links.ts'
 import { PresentationStore } from './store/presentations.ts'
 import { SettingsStore } from './store/settings.ts'
+import { LayoutCache } from './view/layouts.ts'
 
 const config = loadConfig()
 
@@ -29,10 +30,14 @@ const db = openDb(join(config.dataDir, 'stammbaum.db'))
 const links = new LinkStore(db, deriveKey(config.appSecret, 'link-token'), config.publicUrl)
 const settings = new SettingsStore(db)
 const presentations = new PresentationStore(db)
-const app = buildServer({ config, cache, images, links, settings, presentations })
+const layouts = new LayoutCache(undefined, (msg, err) => {
+  if (err) app.log.error({ err }, msg)
+  else app.log.info(msg)
+})
+const app = buildServer({ config, cache, images, links, settings, presentations, layouts })
 
 if (config.devOpenAccess) app.log.warn('DEV_OPEN_ACCESS aktiv – Baum ist ohne Freigabelink abrufbar. Nicht in Produktion verwenden!')
 
 await app.listen({ port: config.port, host: config.host })
 // Daten schon beim Start laden, damit die erste Anfrage nicht warten muss
-cache.refresh().catch(() => {})
+cache.refresh().then(model => layouts.get(model)).catch(() => {})

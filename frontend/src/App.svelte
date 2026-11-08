@@ -3,6 +3,7 @@
   import { DEFAULT_DEPTH, DEPTH_MAX, DEPTH_MIN, type KnownLink, type Presentation as PresentationData, type TreeResponse, type ViewInfo } from '../../shared/types.ts'
   import { ApiError, endPreview, fetchInfo, fetchKnownLinks, fetchPresentation, fetchTree, forgetKnownLink, openKnownLink } from './lib/api.ts'
   import KnownLinks from './lib/KnownLinks.svelte'
+  import PeopleList from './lib/PeopleList.svelte'
   import PersonPanel from './lib/PersonPanel.svelte'
   import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
@@ -15,8 +16,17 @@
   let progenyDepth = $state(DEFAULT_DEPTH)
   /** true, wenn der Besucher die Tiefe selbst geändert hat (im Browser gespeichert) */
   let customDepth = $state(false)
+  /** Alle Generationen der Hauptperson aufklappen */
+  let expandAll = $state(false)
   const DEPTH_KEY = 'stammbaum.depth'
   let view: TreeView | undefined = $state()
+  let fullView: { focus: (id: string) => void } | undefined = $state()
+  // Gesamtbaum samt Layout-Bibliothek erst laden, wenn er gebraucht wird
+  const loadFullTree = () => import('./lib/FullTree.svelte')
+  /** Baum um die Hauptperson, Liste aller Personen oder Gesamtbaum */
+  type Mode = 'tree' | 'list' | 'all'
+  let mode = $state<Mode>('tree')
+  const MODE_HASH: Record<Exclude<Mode, 'tree'>, string> = { list: '#/personen', all: '#/gesamt' }
   let panelOpen = $state(false)
   let info = $state<ViewInfo | null>(null)
   let presenting = $state<{ data: PresentationData | null, index: number } | null>(null)
@@ -78,7 +88,21 @@
 
   function exitPresentation() {
     presenting = null
+    mode = 'tree'
     history.pushState(null, '', `#/p/${mainId}`)
+  }
+
+  function modeFromHash(): Mode {
+    if (location.hash.startsWith(MODE_HASH.list)) return 'list'
+    if (location.hash.startsWith(MODE_HASH.all)) return 'all'
+    return 'tree'
+  }
+
+  function showMode(m: Mode) {
+    if (m === mode) return
+    mode = m
+    panelOpen = false
+    history.pushState(null, '', m === 'tree' ? `#/p/${mainId}` : MODE_HASH[m])
   }
 
   function applyHash() {
@@ -88,12 +112,14 @@
       return
     }
     presenting = null
+    mode = modeFromHash()
     const id = idFromHash()
     if (id && known.has(id)) mainId = id
   }
 
   function select(id: string, openPanel = true) {
     if (!known.has(id)) return
+    mode = 'tree'
     mainId = id
     if (openPanel) panelOpen = true
     if (idFromHash() !== id) history.pushState(null, '', `#/p/${id}`)
@@ -138,6 +164,7 @@
   }
 
   function changeDepth(a: number, p: number) {
+    expandAll = false
     ancestryDepth = clamp(a)
     progenyDepth = clamp(p)
     customDepth = true
@@ -147,6 +174,7 @@
   }
 
   function resetDepth() {
+    expandAll = false
     ancestryDepth = info?.ancestryDepth ?? DEFAULT_DEPTH
     progenyDepth = info?.progenyDepth ?? DEFAULT_DEPTH
     customDepth = false
@@ -170,24 +198,34 @@
     {/if}
     <header>
       <h1>Stammbaum</h1>
-      <PersonSearch people={tree.people} onSelect={select} />
-      <div class="controls" role="group" aria-label="Generationen">
+      <nav class="views" aria-label="Ansicht">
+        <button type="button" aria-current={mode === 'tree' ? 'page' : undefined} onclick={() => showMode('tree')}>Baum</button>
+        <button type="button" aria-current={mode === 'list' ? 'page' : undefined} onclick={() => showMode('list')}>Liste</button>
+        <button type="button" aria-current={mode === 'all' ? 'page' : undefined} onclick={() => showMode('all')}>Gesamt</button>
+      </nav>
+      {#if mode !== 'list'}
+        <PersonSearch people={tree.people} onSelect={id => (mode === 'all' ? fullView?.focus(id) : select(id))} />
+      {/if}
+      <div class="controls" role="group" aria-label="Ansicht steuern">
+        {#if mode === 'tree'}
         <div class="stepper" title="Generationen Vorfahren">
           <span class="long">Vorfahren</span><span class="short" aria-hidden="true">↑</span>
           <button type="button" aria-label="Weniger Vorfahren" onclick={() => changeDepth(ancestryDepth - 1, progenyDepth)} disabled={ancestryDepth <= DEPTH_MIN}>−</button>
-          <output>{ancestryDepth}</output>
+          <output>{expandAll ? '∞' : ancestryDepth}</output>
           <button type="button" aria-label="Mehr Vorfahren" onclick={() => changeDepth(ancestryDepth + 1, progenyDepth)} disabled={ancestryDepth >= DEPTH_MAX}>+</button>
         </div>
         <div class="stepper" title="Generationen Nachkommen">
           <span class="long">Nachkommen</span><span class="short" aria-hidden="true">↓</span>
           <button type="button" aria-label="Weniger Nachkommen" onclick={() => changeDepth(ancestryDepth, progenyDepth - 1)} disabled={progenyDepth <= DEPTH_MIN}>−</button>
-          <output>{progenyDepth}</output>
+          <output>{expandAll ? '∞' : progenyDepth}</output>
           <button type="button" aria-label="Mehr Nachkommen" onclick={() => changeDepth(ancestryDepth, progenyDepth + 1)} disabled={progenyDepth >= DEPTH_MAX}>+</button>
         </div>
-        {#if customDepth && (ancestryDepth !== info?.ancestryDepth || progenyDepth !== info?.progenyDepth)}
+        <button type="button" class="plain" class:active={expandAll} aria-pressed={expandAll} title="Alle Generationen aufklappen" aria-label="Alle Generationen aufklappen" onclick={() => (expandAll = !expandAll)}><span aria-hidden="true">⇕</span><span class="long">Alle</span></button>
+        {#if expandAll || (customDepth && (ancestryDepth !== info?.ancestryDepth || progenyDepth !== info?.progenyDepth))}
           <button type="button" class="plain" aria-label="Standard-Tiefe wiederherstellen" title="Standard-Tiefe wiederherstellen" onclick={resetDepth}><span aria-hidden="true">↺</span><span class="long">Standard</span></button>
         {/if}
         <button type="button" class="plain fit" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
+        {/if}
         <div class="menu">
           {#if info?.presentations.length}
             <button type="button" class="plain present" aria-haspopup="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
@@ -217,13 +255,23 @@
             {/if}
           </div>
         {/if}
-        {#if tree.rootId && tree.rootId !== mainId}
+        {#if mode === 'tree' && tree.rootId && tree.rootId !== mainId}
           <button type="button" class="plain" aria-label="Zur Startperson" onclick={() => select(tree!.rootId!, false)}><span aria-hidden="true">⌂</span><span class="long">Zum Anfang</span></button>
         {/if}
       </div>
     </header>
     <main>
-      <TreeView bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} onSelect={select} />
+      {#if mode === 'list'}
+        <PeopleList people={tree.people} onOpen={select} />
+      {:else if mode === 'all'}
+        {#await loadFullTree()}
+          <p class="loading-view">Gesamtbaum wird geladen …</p>
+        {:then { default: FullTree }}
+          <FullTree bind:this={fullView} people={tree.people} focusId={mainId} onOpen={select} />
+        {/await}
+      {:else}
+        <TreeView bind:this={view} people={tree.people} {mainId} {ancestryDepth} {progenyDepth} {expandAll} onSelect={select} />
+      {/if}
       {#if presenting}
         {#key presenting}
         <Presentation
@@ -301,6 +349,7 @@
   button.plain { padding: 0 12px; display: inline-flex; align-items: center; gap: 6px; }
   button:hover:not(:disabled) { border-color: var(--accent); }
   button:disabled { opacity: 0.4; cursor: default; }
+  button.active { border-color: var(--accent); background: var(--accent); color: var(--surface); }
   .banner {
     display: flex;
     flex-wrap: wrap;
@@ -314,6 +363,10 @@
     text-align: center;
   }
   .banner button { height: 28px; padding: 0 12px; border-color: transparent; background: var(--surface); color: var(--text); }
+  .loading-view { display: grid; place-items: center; height: 100%; margin: 0; color: var(--muted); }
+  .views { display: flex; padding: 3px; gap: 2px; border-radius: 10px; background: var(--bg); border: 1px solid var(--border); }
+  .views button { height: 30px; min-width: 0; padding: 0 12px; border: 0; border-radius: 7px; background: none; }
+  .views button[aria-current='page'] { background: var(--surface); box-shadow: 0 1px 3px rgb(0 0 0 / 0.15); font-weight: 600; }
   .menu { position: relative; }
   .menu ul {
     position: absolute;
@@ -356,6 +409,6 @@
     .stepper + .stepper { margin-left: 4px; }
     button.plain { padding: 0 10px; }
     button.fit { margin-left: auto; }
-    :global(.search) { flex-basis: 100%; max-width: none; }
+    .layout header :global(.search) { flex-basis: 100%; max-width: none; }
   }
 </style>

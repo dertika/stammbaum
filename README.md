@@ -7,6 +7,9 @@ bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Date
 
 - **Baumansicht:** Zoomen, Verschieben, Fokus per Klick, Personensuche,
   Generationen vor und zurück, Profilbilder, Detail-Panel. Mobil wird es zum Bottom-Sheet.
+- **Ansichten „Liste“ und „Gesamt“:** Liste aller Personen (filtern, sortieren nach Name
+  oder Geburtsjahr) und ein Gesamtbaum mit allen Personen in Generationen, inklusive
+  eingeheirateter Familien. Im Baum klappt „Alle“ sämtliche Generationen der Hauptperson auf.
 - **Präsentationsmodus:** Vollbild für Beamer und Fernseher mit großer Schrift und
   hohem Kontrast. Steuerung per Pfeiltasten und Presenter-Fernbedienung. Es gibt
   einen freien Modus und Präsentationen mit festen Stationen wie Folien.
@@ -203,6 +206,17 @@ Jede Variable kann alternativ als Datei übergeben werden (`NAME_FILE=/run/secre
 | `LIVING_YEARS` | `100` | ohne Todesangabe gilt als lebend, wer jünger ist |
 | `ROOT_PERSON` | Gramps-Hauptperson | Gramps-ID einer Startperson, z. B. `I0042` – nur Fallback, wenn im Admin keine gesetzt ist |
 | `PORT` / `DATA_DIR` | `8080` / `/data` | HTTP-Port und Datenverzeichnis im Container |
+
+## Gesamtbaum
+
+Der Gesamtbaum (`#/gesamt`) zeigt alle nicht privaten Personen auf einmal; lebende
+erscheinen je nach Link anonymisiert. Die Anordnung (Sugiyama-Verfahren mit
+[d3-dag](https://github.com/erikbrinkman/d3-dag)) berechnet das Backend einmal in einem
+Worker-Thread und hält sie im Speicher. Sie hängt nur von der Familienstruktur ab und gilt
+daher für alle Links; neu gerechnet wird nur, wenn sich in Gramps Personen oder Beziehungen
+ändern. Richtwerte: 300 Personen ≈ 0,3 s, 1500 ≈ 7 s, 3000 ≈ 30 s. Ab 4000 Personen wird
+ein schnelleres, etwas unruhigeres Verfahren verwendet. Während der Berechnung zeigt die
+Seite einen Hinweis und lädt automatisch nach.
 
 ## Startansicht
 

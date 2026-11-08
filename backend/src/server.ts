@@ -11,7 +11,7 @@ import { viewRoutes } from './routes/view.ts'
 import { deriveKey } from './store/crypto.ts'
 import type { LinkStore } from './store/links.ts'
 import type { PresentationStore } from './store/presentations.ts'
-import type { LayoutCache } from './view/layouts.ts'
+import type { FocusLayoutCache, LayoutCache } from './view/layouts.ts'
 import type { SettingsStore } from './store/settings.ts'
 
 export interface Services {
@@ -22,6 +22,7 @@ export interface Services {
   settings: SettingsStore
   presentations: PresentationStore
   layouts: LayoutCache
+  focusLayouts: FocusLayoutCache
 }
 
 export function buildServer(services: Services) {

@@ -5,8 +5,11 @@ Schlankes, rein lesendes Stammbaum-Dashboard für die Familie unter
 (**https://stammbaum-admin.dertika.de**) über dessen REST-API. Die Zugangsdaten
 bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Daten.
 
-- **Baumansicht:** Zoomen, Verschieben, Fokus per Klick, Personensuche,
-  Generationen vor und zurück, Profilbilder, Detail-Panel. Mobil wird es zum Bottom-Sheet.
+- **Baumansicht:** Ausschnitt um eine Person mit Vorfahren, deren Geschwistern
+  (Onkel/Tanten, Großonkel/-tanten) samt Partnern, Cousins und Cousinen, eigenen
+  Geschwistern mit Nichten und Neffen sowie Nachkommen. Zoomen, Verschieben, Fokus per
+  Klick (Karten gleiten an ihre neue Stelle), Personensuche, Generationen vor und zurück,
+  Profilbilder, Detail-Panel. Mobil wird es zum Bottom-Sheet.
 - **Ansichten „Liste“ und „Gesamt“:** Liste aller Personen (filtern, sortieren nach Name
   oder Geburtsjahr) und ein Gesamtbaum mit allen Personen in Generationen, inklusive
   eingeheirateter Familien. Im Baum klappt „Alle“ sämtliche Generationen der Hauptperson auf.
@@ -30,7 +33,7 @@ bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Date
 ```
 Browser ──https──▶ OpenResty (CrowdSec, *.dertika.de) ──▶ 127.0.0.1:8090
                                                          stammbaum-Container (Node 22, Fastify)
-                                                         ├─ SPA (Svelte 5 + family-chart)
+                                                         ├─ SPA (Svelte 5, eigene SVG-Darstellung)
                                                          ├─ /s/<token>, /api/view/*   Familie
                                                          ├─ /auth/*, /api/admin/*      Admin (OIDC)
                                                          └─ /data: SQLite + Bild-Cache (Volume)
@@ -74,18 +77,18 @@ Browser ──https──▶ OpenResty (CrowdSec, *.dertika.de) ──▶ 127.0.
    der Admin-Bereich den Link erneut anzeigen kann, liegt das Token zusätzlich
    AES-256-GCM-verschlüsselt vor. Den Schlüssel leitet das Backend aus `APP_SECRET` ab.
 
-### Warum family-chart?
+### Darstellung
 
-[family-chart](https://github.com/donatso/family-chart) (MIT, D3) bringt das
-gewünschte Interaktionsmodell schon mit:
-- Zoomen und Verschieben.
-- Klick fokussiert eine Person, mit animiertem Übergang.
-- Vorfahren- und Nachkommentiefe lassen sich getrennt einstellen.
-- Die HTML-Karten lassen sich frei gestalten, das ermöglicht etwa die großen Karten
-  im Präsentationsmodus.
+Baumansicht, Gesamtbaum und Präsentation nutzen dieselbe eigene SVG-Darstellung.
+Die Anordnung berechnet das Backend mit [d3-dag](https://github.com/erikbrinkman/d3-dag)
+(Sugiyama-Verfahren): Generationen in Reihen, Paare nebeneinander, rechtwinklige Linien
+nur in den Zwischenräumen. Zoomen und Verschieben übernimmt `d3-zoom`.
 
-[topola](https://github.com/PeWu/topola) ist stärker bei statischen Gesamtdiagrammen
-für Druck und Poster. Fokuswechsel und Animationen müsste man dort selbst bauen.
+Anfangs lief die Baumansicht mit [family-chart](https://github.com/donatso/family-chart).
+Dort ist die Vorfahrenseite aber ein reiner Ahnenbaum; Geschwister zeigt die Bibliothek
+nur für die Hauptperson. Für Onkel, Tanten und Cousins war deshalb eine eigene
+Darstellung nötig – mit dem Nebeneffekt, dass alle Ansichten und das PDF gleich aussehen
+und das Bundle kleiner wurde.
 
 ## Einrichtung auf srv-linux (rootless Podman, Benutzer `christian`)
 

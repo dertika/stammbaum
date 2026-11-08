@@ -9,7 +9,7 @@ import { openDb } from './store/db.ts'
 import { LinkStore } from './store/links.ts'
 import { PresentationStore } from './store/presentations.ts'
 import { SettingsStore } from './store/settings.ts'
-import { LayoutCache } from './view/layouts.ts'
+import { FocusLayoutCache, LayoutCache } from './view/layouts.ts'
 
 const config = loadConfig()
 
@@ -34,7 +34,7 @@ const layouts = new LayoutCache(undefined, (msg, err) => {
   if (err) app.log.error({ err }, msg)
   else app.log.info(msg)
 })
-const app = buildServer({ config, cache, images, links, settings, presentations, layouts })
+const app = buildServer({ config, cache, images, links, settings, presentations, layouts, focusLayouts: new FocusLayoutCache() })
 
 if (config.devOpenAccess) app.log.warn('DEV_OPEN_ACCESS aktiv – Baum ist ohne Freigabelink abrufbar. Nicht in Produktion verwenden!')
 

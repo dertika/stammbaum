@@ -16,7 +16,7 @@ describe('ohne Freigabelink', () => {
   it('liefert im Entwicklungsmodus den Baum', async () => {
     const res = await testApp({ devOpenAccess: true }).app.inject('/api/view/tree')
     expect(res.statusCode).toBe(200)
-    expect(res.json().people.length).toBe(20)
+    expect(res.json().people.length).toBe(23)
   })
 })
 

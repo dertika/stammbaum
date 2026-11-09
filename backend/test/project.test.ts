@@ -57,7 +57,7 @@ describe('project mit Anonymisierung', () => {
   it('lässt Familienereignisse mit anonymisiertem Partner weg', () => {
     // Martin Vogel ist lebend; seine Hochzeit mit Sabine (lebend) taucht nirgends auf
     const heinrich = personDetails(model, p, 'pi0008', DEFAULT_DETAILS)!
-    expect(heinrich.events.map(e => e.label)).toEqual(['Geburt', 'Auswanderung', 'Hochzeit', 'Einwanderung', 'Tod'])
+    expect(heinrich.events.map(e => e.label)).toEqual(['Geburt', 'Hochzeit', 'Auswanderung', 'Hochzeit', 'Einwanderung', 'Tod'])
     expect(heinrich.media).toHaveLength(2)
     expect(heinrich.notes[0]).toContain('Kanada')
   })

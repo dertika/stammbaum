@@ -136,7 +136,7 @@ export interface ShareLinkInput {
 
 export interface AdminInfo {
   name: string
-  grampsEditUrl: string
+  grampsEditUrl: string | null
   publicUrl: string
 }
 

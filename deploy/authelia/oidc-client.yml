@@ -15,7 +15,7 @@ identity_providers:
         require_pkce: true
         pkce_challenge_method: 'S256'
         redirect_uris:
-          - 'https://stammbaum.dertika.de/auth/callback'
+          - 'https://stammbaum.example.com/auth/callback'
         scopes:
           - 'openid'
           - 'profile'
@@ -28,4 +28,4 @@ identity_providers:
         userinfo_signed_response_alg: 'none'
 
 # Gruppe für Admins (z. B. in der users_database.yml oder im LDAP):
-#   groups: ['stammbaum-admins']
+#   groups: ['family-admins']

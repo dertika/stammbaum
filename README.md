@@ -1,8 +1,8 @@
 # Stammbaum
 
 Schlankes, rein lesendes Stammbaum-Dashboard für die Familie unter
-**https://stammbaum.dertika.de**. Die Daten kommen aus Gramps Web
-(**https://stammbaum-admin.dertika.de**) über dessen REST-API. Die Zugangsdaten
+**https://stammbaum.example.com**. Die Daten kommen aus Gramps Web
+(**https://gramps.example.com**) über dessen REST-API. Die Zugangsdaten
 bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Daten.
 
 - **Baumansicht:** Ausschnitt um eine Person mit Vorfahren, deren Geschwistern
@@ -31,7 +31,7 @@ bleiben im Backend, und an den Browser gehen nur ausdrücklich freigegebene Date
 ## Architektur
 
 ```
-Browser ──https──▶ OpenResty (CrowdSec, *.dertika.de) ──▶ 127.0.0.1:8090
+Browser ──https──▶ OpenResty (CrowdSec, *.example.com) ──▶ 127.0.0.1:8090
                                                          stammbaum-Container (Node 22, Fastify)
                                                          ├─ SPA (Svelte 5, eigene SVG-Darstellung)
                                                          ├─ /s/<token>, /api/view/*   Familie
@@ -90,7 +90,12 @@ nur für die Hauptperson. Für Onkel, Tanten und Cousins war deshalb eine eigene
 Darstellung nötig – mit dem Nebeneffekt, dass alle Ansichten und das PDF gleich aussehen
 und das Bundle kleiner wurde.
 
-## Einrichtung auf srv-linux (rootless Podman, Benutzer `christian`)
+## Einrichtung auf dem Server (rootless Podman)
+
+Die Dateien unter `deploy/` sind Vorlagen mit Platzhaltern (`stammbaum.example.com`,
+`gramps.example.com`, `auth.example.com`). Die echten Werte trägst du nur in die Kopien
+auf dem Server ein (`~/.config/containers/systemd/`, OpenResty- und Authelia-Konfiguration),
+nicht ins Repository.
 
 ### 1. Gramps-Web-Benutzer anlegen
 
@@ -103,7 +108,7 @@ Datensätze).
 Den Ausschnitt aus [`deploy/authelia/oidc-client.yml`](deploy/authelia/oidc-client.yml)
 in die Authelia-Konfiguration übernehmen und Authelia neu starten. Den
 Klartext des Client-Secrets brauchst du im nächsten Schritt. Nur Mitglieder der
-Gruppe `stammbaum-admins` dürfen in den Admin-Bereich (`OIDC_ADMIN_GROUP`).
+Gruppe `family-admins` dürfen in den Admin-Bereich (`OIDC_ADMIN_GROUP`).
 
 ### 3. Image
 
@@ -156,7 +161,7 @@ cp deploy/quadlet/stammbaum.container deploy/quadlet/stammbaum-data.volume ~/.co
 systemctl --user daemon-reload
 systemctl --user start stammbaum
 systemctl --user status stammbaum
-loginctl enable-linger christian   # falls noch nicht geschehen
+loginctl enable-linger "$USER"  # falls noch nicht geschehen
 ```
 
 **Gramps Web intern erreichen:** `host.containers.internal` zeigt in rootless
@@ -178,7 +183,7 @@ Wer Updates lieber selbst steuert, trägt einen festen Tag ein (z. B. `:1.0.0`) 
 
 ### 6. OpenResty
 
-[`deploy/openresty/stammbaum.dertika.de.conf`](deploy/openresty/stammbaum.dertika.de.conf)
+[`deploy/openresty/stammbaum.example.com.conf`](deploy/openresty/stammbaum.example.com.conf)
 ins OpenResty-`conf.d` kopieren. Die Zertifikatspfade passt du an dein
 Wildcard-Zertifikat an. Der CrowdSec-Bouncer muss im `http`-Kontext initialisiert sein
 (`crowdsec_openresty.conf` des offiziellen Bouncers). Danach `openresty -t && openresty -s reload`.
@@ -191,7 +196,7 @@ Der Block enthält:
 
 ### 7. Erster Aufruf
 
-1. https://stammbaum.dertika.de/admin aufrufen und über Authelia anmelden.
+1. https://stammbaum.example.com/admin aufrufen und über Authelia anmelden.
 2. Unter **Datenstand** prüfen, ob die Personen geladen wurden.
 3. Unter **Freigabelinks** einen Link anlegen. Er wird beim Anlegen sofort kopiert.
 
@@ -205,8 +210,8 @@ Jede Variable kann alternativ als Datei übergeben werden (`NAME_FILE=/run/secre
 | `APP_SECRET` | – | mindestens 32 Zeichen; verschlüsselt Link-Tokens, signiert Sitzungen |
 | `GRAMPS_API_URL` | – | Basis-URL von Gramps Web, möglichst intern |
 | `GRAMPS_USER` / `GRAMPS_PASSWORD` | – | Gramps-Benutzer mit Rolle *Guest* |
-| `GRAMPS_EDIT_URL` | `https://stammbaum-admin.dertika.de` | Ziel des Buttons „Stammbaum bearbeiten“ |
-| `OIDC_ISSUER` | – | z. B. `https://auth.dertika.de`; ohne OIDC ist `/admin` gesperrt |
+| `GRAMPS_EDIT_URL` | – | z. B. `https://gramps.example.com`; Ziel des Buttons „Stammbaum bearbeiten“ (ohne Wert ausgeblendet) |
+| `OIDC_ISSUER` | – | z. B. `https://auth.example.com`; ohne OIDC ist `/admin` gesperrt |
 | `OIDC_CLIENT_ID` / `OIDC_CLIENT_SECRET` | – | OIDC-Client aus Authelia |
 | `OIDC_ADMIN_GROUP` | – | optional: nur diese Gruppe darf in den Admin-Bereich |
 | `CACHE_TTL` | `900` | Sekunden, bis die Daten im Hintergrund neu geladen werden |

@@ -25,7 +25,7 @@ function int(name: string, fallback: number): number {
 export type GrampsSource = 'api' | 'fixture'
 
 export interface Config {
-  /** Öffentliche Adresse des Dashboards, z. B. https://stammbaum.dertika.de */
+  /** Öffentliche Adresse des Dashboards, z. B. https://stammbaum.example.com */
   publicUrl: string
   /** Geheimnis für Verschlüsselung der Link-Tokens und Signatur der Sitzungen */
   appSecret: string
@@ -49,7 +49,7 @@ export interface Config {
   /** Ohne Todesangabe gilt als lebend, wer jünger als so viele Jahre ist */
   livingYears: number
   /** Ziel des Buttons „Stammbaum bearbeiten“ */
-  grampsEditUrl: string
+  grampsEditUrl: string | null
   /** OIDC-Anmeldung für /admin (Authelia); fehlt sie, ist der Admin-Bereich gesperrt */
   oidc?: {
     issuer: string
@@ -85,7 +85,7 @@ export function loadConfig(): Config {
     cacheTtl: int('CACHE_TTL', 900),
     rootPerson: env('ROOT_PERSON'),
     livingYears: int('LIVING_YEARS', 100),
-    grampsEditUrl: env('GRAMPS_EDIT_URL', 'https://stammbaum-admin.dertika.de')!,
+    grampsEditUrl: env('GRAMPS_EDIT_URL') ?? null,
     oidc: env('OIDC_ISSUER')
       ? {
           issuer: required('OIDC_ISSUER'),

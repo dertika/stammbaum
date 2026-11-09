@@ -5,8 +5,12 @@ const FAMILY_SIZE = 12
 const FAMILY_H = 2
 /** Senkrechter Abstand zwischen Ebenen – Platz für Partner- und Geschwisterleisten */
 const GAP_Y = 28
-/** Abstand zwischen Karten nebeneinander (auch innerhalb eines Paares) */
+/** Abstand zwischen Karten nebeneinander */
 const GAP_X = 24
+/** Abstand zwischen Partnern – Platz für die Ehelinie */
+const GAP_PARTNER = 32
+/** Größte Gruppe von Partnern, die zusammen angeordnet wird */
+const MAX_UNIT = 6
 
 /** Was das Layout von einer Person braucht – nur die Beziehungen */
 export interface LayoutPerson {
@@ -70,6 +74,37 @@ function families(people: LayoutPerson[], known: Set<string>) {
 }
 
 /**
+ * Reihenfolge einer Gruppe von Partnern, sodass Ehepaare möglichst nebeneinander stehen.
+ * Kette (jeder höchstens zwei Partner): entlang der Kette. Eine Person mit mehreren
+ * Partnern, die sonst niemanden haben: diese Person in der Mitte. Sonst null.
+ */
+export function arrangePartners(group: string[], partnersOf: (id: string) => string[]): string[] | null {
+  if (group.length === 1) return group
+  const inGroup = (id: string) => group.includes(id)
+  const deg = new Map(group.map(id => [id, partnersOf(id).filter(inGroup).length]))
+  const edges = [...deg.values()].reduce((a, b) => a + b, 0) / 2
+  // Kette: alle höchstens zwei Partner, keine Ringe
+  if ([...deg.values()].every(d => d <= 2) && edges === group.length - 1) {
+    const start = [...group].sort().find(id => deg.get(id) === 1)!
+    const order = [start]
+    while (order.length < group.length) {
+      const next = partnersOf(order.at(-1)!).find(s => inGroup(s) && !order.includes(s))
+      if (!next) return null
+      order.push(next)
+    }
+    return order
+  }
+  // Stern: eine Person in der Mitte, alle anderen nur mit ihr verbunden
+  const center = [...group].sort((a, b) => deg.get(b)! - deg.get(a)! || (a < b ? -1 : 1))[0]
+  const others = group.filter(id => id !== center).sort()
+  if (others.every(id => deg.get(id) === 1 && partnersOf(id).includes(center))) {
+    const half = Math.floor(others.length / 2)
+    return [...others.slice(0, half), center, ...others.slice(half)]
+  }
+  return null
+}
+
+/**
  * Ordnet alle Personen in Generationen an (Sugiyama-Verfahren).
  * `simplex` liefert deutlich ruhigere Linien, ist aber bei großen Bäumen langsam –
  * deshalb läuft es im Backend in einem Worker und wird zwischengespeichert.
@@ -101,31 +136,39 @@ export function layoutAll(people: LayoutPerson[], coord: 'greedy' | 'simplex' = 
     }
   }
 
-  // Paare, die beide nur diese eine Ehe haben, werden eine Einheit und stehen so
-  // immer nebeneinander. Mehrfach Verheiratete bleiben einzeln.
+  // Partner auf derselben Ebene bilden eine Einheit und stehen nebeneinander:
+  // ein Paar, eine Kette (frühere Partnerin – Vater – aktuelle Frau) oder eine
+  // Person mit mehreren Partnern in der Mitte. Größere Geflechte bleiben einzeln.
   const byId = new Map(people.map(p => [p.id, p]))
   const spousesOf = (id: string) => byId.get(id)!.spouses.filter(s => known.has(s))
+  const sameLayer = (id: string) => spousesOf(id).filter(s => layer.get(s) === layer.get(id))
   const unitOf = new Map<string, string[]>()
   for (const p of people) {
     if (unitOf.has(p.id)) continue
-    const sp = spousesOf(p.id)
-    const partner = sp.length === 1 ? sp[0] : undefined
-    if (partner && !unitOf.has(partner) && spousesOf(partner).length === 1 && layer.get(partner) === layer.get(p.id)) {
-      const members = [p.id, partner].sort()
-      for (const m of members) unitOf.set(m, members)
-    } else {
-      unitOf.set(p.id, [p.id])
+    const group = [p.id]
+    for (let i = 0; i < group.length && group.length <= MAX_UNIT; i++) {
+      for (const s of sameLayer(group[i])) if (!group.includes(s)) group.push(s)
+    }
+    const members = group.length <= MAX_UNIT ? arrangePartners(group, sameLayer) : null
+    if (members) for (const m of members) unitOf.set(m, members)
+    else unitOf.set(p.id, [p.id])
+  }
+  /** Partner, die in ihrer Einheit direkt nebeneinander stehen (Schlüssel „a|b“, sortiert) */
+  const adjacent = new Set<string>()
+  for (const members of new Set(unitOf.values())) {
+    for (let i = 1; i < members.length; i++) {
+      if (sameLayer(members[i - 1]).includes(members[i])) adjacent.add([members[i - 1], members[i]].sort().join('|'))
     }
   }
+  const isAdjacent = (a: string, b: string) => adjacent.has([a, b].sort().join('|'))
 
   const g = graph<Datum, LinkDatum>()
   const unitNodes = new Map<string[], MutGraphNode<Datum, LinkDatum>>()
   for (const members of new Set(unitOf.values())) unitNodes.set(members, g.node({ kind: 'unit', members }))
   const nodeOf = (person: string) => unitNodes.get(unitOf.get(person)!)!
   for (const [key, f] of fams) {
-    const inUnit = unitOf.get(f.parents[0])!
-    // Kinderloses Paar in einer Einheit: steht ohnehin nebeneinander, kein Familienknoten nötig
-    if (!f.children.length && f.parents.every(id => inUnit.includes(id))) continue
+    // Kinderloses Paar nebeneinander: die Ehelinie verbindet sie, kein Familienknoten nötig
+    if (!f.children.length && f.parents.length === 2 && isAdjacent(f.parents[0], f.parents[1])) continue
     const n = g.node({ kind: 'family', id: key })
     const byUnit = new Map<MutGraphNode<Datum, LinkDatum>, string[]>()
     for (const parent of f.parents) byUnit.set(nodeOf(parent), [...(byUnit.get(nodeOf(parent)) ?? []), parent])
@@ -143,7 +186,7 @@ export function layoutAll(people: LayoutPerson[], coord: 'greedy' | 'simplex' = 
     return used.length - 1
   }
 
-  const unitWidth = (members: string[]) => members.length * FULL_CARD_W + (members.length - 1) * GAP_X
+  const unitWidth = (members: string[]) => members.length * FULL_CARD_W + (members.length - 1) * GAP_PARTNER
   const nodeSize = (n: GraphNode<Datum, LinkDatum>): readonly [number, number] =>
     n.data.kind === 'unit' ? [unitWidth(n.data.members), FULL_CARD_H] : [FAMILY_SIZE, FAMILY_H]
   const { width } = sugiyama()
@@ -153,22 +196,38 @@ export function layoutAll(people: LayoutPerson[], coord: 'greedy' | 'simplex' = 
     .coord(coord === 'simplex' ? coordSimplex() : coordGreedy())
     .gap([GAP_X, GAP_Y])(g)
 
-  // Wo die Eltern jeder Person stehen (x des Familienknotens darüber)
+  // Wo die Eltern jeder Person stehen (x des Familienknotens darüber) und wo die
+  // Kinder eines Paares hängen (x des Familienknotens darunter)
   const parentX = new Map<string, number>()
-  for (const l of g.links()) if (l.source.data.kind === 'family') parentX.set(l.data.persons[0], l.source.x)
+  const childFamilies = new Map<GraphNode<Datum, LinkDatum>, { persons: string[], x: number }[]>()
+  for (const l of g.links()) {
+    if (l.source.data.kind === 'family') parentX.set(l.data.persons[0], l.source.x)
+    else childFamilies.set(l.source, [...(childFamilies.get(l.source) ?? []), { persons: l.data.persons, x: l.target.x }])
+  }
 
   // Personen innerhalb ihrer Einheit von links nach rechts – jeder Partner auf der
   // Seite seiner eigenen Eltern, damit sich deren Linien nicht kreuzen
   const personX = new Map<string, number>()
   for (const node of g.nodes()) {
     if (node.data.kind !== 'unit') continue
-    const members = [...node.data.members]
-    const side = (m: string) => parentX.get(m) ?? node.x
-    if (members.length === 2 && side(members[0]) > side(members[1])) members.reverse()
-    const left = node.x - unitWidth(members) / 2 + FULL_CARD_W / 2
-    members.forEach((m, i) => personX.set(m, left + i * (FULL_CARD_W + GAP_X)))
+    // Richtung der Reihe so wählen, dass jede Person nah unter ihren Eltern und jedes Paar
+    // nah über seinen Kindern steht – sonst kreuzen sich die Linien
+    const left = node.x - unitWidth(node.data.members) / 2 + FULL_CARD_W / 2
+    const place = (order: string[]) => new Map(order.map((m, i) => [m, left + i * (FULL_CARD_W + GAP_PARTNER)]))
+    const cost = (xs: Map<string, number>) => {
+      let c = 0
+      for (const [m, x] of xs) if (parentX.has(m)) c += Math.abs(x - parentX.get(m)!)
+      for (const f of childFamilies.get(node) ?? []) {
+        const mid = f.persons.reduce((sum, m) => sum + xs.get(m)!, 0) / f.persons.length
+        c += Math.abs(mid - f.x)
+      }
+      return c
+    }
+    const forward = place(node.data.members)
+    const backward = place([...node.data.members].reverse())
+    for (const [m, x] of cost(backward) < cost(forward) ? backward : forward) personX.set(m, x)
   }
-  return routeOrthogonal(g, width, personX)
+  return routeOrthogonal(g, width, personX, isAdjacent)
 }
 
 /** Waagerechter Abstand zwischen Spuren, unter dem der Zwischenraum vergrößert wird */
@@ -191,15 +250,29 @@ interface Hop {
  * nur an der eigenen Karte, am Familienknoten oder in den Lücken, die d3-dag für
  * lange Kanten freihält. So läuft keine Linie hinter einer Karte durch.
  */
-function routeOrthogonal(g: Graph<Datum, LinkDatum>, width: number, personX: Map<string, number>): FullLayout {
+function routeOrthogonal(
+  g: Graph<Datum, LinkDatum>,
+  width: number,
+  personX: Map<string, number>,
+  isAdjacent: (a: string, b: string) => boolean,
+): FullLayout {
   const half = (d: Datum) => (d.kind === 'unit' ? FULL_CARD_H / 2 : FAMILY_H / 2)
   const famKey = (l: { source: GraphNode<Datum, LinkDatum>, target: GraphNode<Datum, LinkDatum> }) =>
     l.target.data.kind === 'family' ? l.target.data.id : l.source.data.kind === 'family' ? l.source.data.id : ''
 
-  // Jede Elternlinie beginnt an der eigenen Karte, jede Kindlinie endet an der eigenen Karte
-  const lines = [...g.links()].flatMap(l => {
+  // Elternlinien: bei nebeneinanderstehenden Partnern eine Linie ab der Mitte der Ehelinie
+  // (auf halber Kartenhöhe), sonst je Elternteil ab der Kartenunterkante.
+  // Kindlinien enden an der eigenen Karte.
+  type Line = { link: (typeof links)[number], pts: [number, number][], fromMiddle?: boolean }
+  const links = [...g.links()]
+  const lines: Line[] = links.flatMap(l => {
     const pts = l.points.map(p => [p[0], p[1]] as [number, number])
     if (l.source.data.kind === 'unit') {
+      const [a, b] = l.data.persons
+      if (b && l.data.persons.length === 2 && isAdjacent(a, b)) {
+        const mx = (personX.get(a)! + personX.get(b)!) / 2
+        return [{ link: l, pts: [[mx, pts[0][1]] as [number, number], ...pts.slice(1)], fromMiddle: true }]
+      }
       return l.data.persons.map(person => ({ link: l, pts: [[personX.get(person)!, pts[0][1]] as [number, number], ...pts.slice(1)] }))
     }
     pts[pts.length - 1] = [personX.get(l.data.persons[0])!, pts[pts.length - 1][1]]
@@ -275,8 +348,8 @@ function routeOrthogonal(g: Graph<Datum, LinkDatum>, width: number, personX: Map
   // 4. Linienzüge: senkrecht zur Spur, waagerecht, senkrecht weiter
   const round = (v: number) => Math.round(v * 10) / 10
   const result: FullLayout = { width: round(width), height: 0, people: [], families: [], links: [] }
-  lines.forEach(({ link, pts }, li) => {
-    const out: [number, number][] = [[pts[0][0], y(pts[0][1]) + half(link.source.data)]]
+  lines.forEach(({ link, pts, fromMiddle }, li) => {
+    const out: [number, number][] = [[pts[0][0], y(pts[0][1]) + (fromMiddle ? 0 : half(link.source.data))]]
     hopsByLine[li].forEach((h, k) => {
       const ty = trackY(h)
       const [nx, ny] = pts[k + 1]
@@ -289,8 +362,20 @@ function routeOrthogonal(g: Graph<Datum, LinkDatum>, width: number, personX: Map
   })
   for (const node of g.nodes()) {
     const ny = round(y(node.y))
-    if (node.data.kind === 'unit') for (const m of node.data.members) result.people.push({ id: m, x: round(personX.get(m)!), y: ny })
-    else result.families.push({ x: round(node.x), y: ny })
+    if (node.data.kind !== 'unit') {
+      result.families.push({ x: round(node.x), y: ny })
+      continue
+    }
+    const m = node.data.members
+    m.forEach(id => result.people.push({ id, x: round(personX.get(id)!), y: ny }))
+    // Ehelinien zwischen nebeneinanderstehenden Partnern, von Kartenrand zu Kartenrand
+    const ordered = [...m].sort((a, b) => personX.get(a)! - personX.get(b)!)
+    for (let i = 1; i < ordered.length; i++) {
+      if (!isAdjacent(ordered[i - 1], ordered[i])) continue
+      const x1 = personX.get(ordered[i - 1])! + FULL_CARD_W / 2
+      const x2 = personX.get(ordered[i])! - FULL_CARD_W / 2
+      result.links.push({ points: [[round(x1), ny], [round(x2), ny]] })
+    }
   }
   result.height = round(newY.at(-1)! + layerHalf.at(-1)! + FULL_CARD_H / 2)
   return result

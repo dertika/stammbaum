@@ -37,6 +37,10 @@ const people: Spec[] = [
   { id: 'I0020', first: 'Sophie', last: 'Vogel', gender: 0, birth: [6, 7, 1984, 'P5'] },
   // ohne Lebensdaten – gilt über das Geburtsjahr des Sohnes als verstorben
   { id: 'I0021', first: 'Andreas', last: 'Muster', gender: 1 },
+  // frühere Partnerin von Heinrich mit gemeinsamem Sohn; Margaretes Ehemann (kinderlos)
+  { id: 'I0022', first: 'Gerda', last: 'Klein', gender: 0, birth: [11, 2, 1929, 'P5'], death: [4, 6, 1999, 'P5'] },
+  { id: 'I0023', first: 'Klaus', last: 'Muster', gender: 1, birth: [20, 10, 1950, 'P5'] },
+  { id: 'I0024', first: 'Otto', last: 'Brandt', gender: 1, birth: [3, 3, 1928, 'P3'], death: [9, 9, 2001, 'P3'] },
 ]
 
 // Zusätzliche Ereignisse: [Person, Typ, Datum, Beschreibung]
@@ -58,6 +62,8 @@ const families: [string | null, string | null, string[], number?][] = [
   ['I0017', 'I0018', ['I0002'], 1870],
   ['I0019', 'I0012', ['I0020'], 1982],
   ['I0021', null, ['I0001']],
+  ['I0008', 'I0022', ['I0023'], 1949],
+  ['I0024', 'I0009', [], 1955],
 ]
 
 const placeNames: Record<string, [string, string?]> = {

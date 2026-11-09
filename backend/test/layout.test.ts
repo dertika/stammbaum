@@ -3,7 +3,7 @@ import { describe, expect, it } from 'vitest'
 import { FULL_CARD_H } from '../../shared/types.ts'
 import { buildModel } from '../src/gramps/model.ts'
 import type { RawDatabase } from '../src/gramps/raw.ts'
-import { generations, layoutAll, type LayoutPerson } from '../src/view/fullLayout.ts'
+import { arrangePartners, generations, layoutAll, type LayoutPerson } from '../src/view/fullLayout.ts'
 import { LayoutCache, layoutInput, workerComputer } from '../src/view/layouts.ts'
 import { openLink, testApp } from './helpers.ts'
 
@@ -102,7 +102,7 @@ describe('GET /api/view/layout', () => {
     }
     expect(res.statusCode).toBe(200)
     const body = res.json()
-    expect(body.people).toHaveLength(20)
+    expect(body.people).toHaveLength(23)
     expect(res.body).not.toMatch(/Muster|Peter|pi0015/)
   })
 })
@@ -187,7 +187,7 @@ describe('Rechtwinklige Linien', () => {
         const s = byId.get(p.spouses[0])!
         if (s.spouses.length !== 1 || p.id > s.id) continue
         expect(pos.get(s.id)!.y).toBe(pos.get(p.id)!.y)
-        expect(Math.abs(pos.get(s.id)!.x - pos.get(p.id)!.x)).toBeCloseTo(210 + 24, 0)
+        expect(Math.abs(pos.get(s.id)!.x - pos.get(p.id)!.x)).toBeCloseTo(210 + 32, 0)
         checked++
       }
       expect(checked).toBeGreaterThan(0)
@@ -209,25 +209,100 @@ describe('Rechtwinklige Linien', () => {
       }
     })
 
-    it(`${name}: Partner teilen sich eine Leiste`, () => {
-      // Linien ab der Kartenunterkante; je Paar die beiden, die am selben Familienknoten enden
-      const fromCard = (c: { x: number, y: number }) => l.links
-        .filter(k => k.points[0][0] === c.x && Math.abs(k.points[0][1] - (c.y + 32)) < 0.2)
+    it(`${name}: Kinder hängen an der Mitte der Ehelinie`, () => {
+      // für jedes nebeneinanderstehende Paar mit gemeinsamen Kindern beginnt eine Linie genau zwischen beiden
+      const starts = new Set(l.links.map(k => String(k.points[0])))
       let checked = 0
       for (const p of people) {
         for (const s of p.spouses) {
           if (p.id > s) continue
-          const a = fromCard(pos.get(p.id)!)
-          const b = fromCard(pos.get(s)!)
-          for (const la of a) {
-            const lb = b.find(k => String(k.points.at(-1)) === String(la.points.at(-1)))
-            if (!lb) continue
-            expect(la.points[1][1]).toBe(lb.points[1][1])
-            checked++
-          }
+          const [a, b] = [pos.get(p.id)!, pos.get(s)!]
+          const common = p.children.some(c => people.find(q => q.id === c)?.parents.includes(s))
+          if (!common || a.y !== b.y || Math.abs(a.x - b.x) > 242.5) continue
+          expect(starts.has(String([(a.x + b.x) / 2, a.y])), `${p.id}+${s}`).toBe(true)
+          checked++
         }
       }
       expect(checked).toBeGreaterThan(0)
     })
+
+    it(`${name}: Ehelinie zwischen nebeneinanderstehenden Partnern`, () => {
+      const segs = new Set(l.links.filter(k => k.points.length === 2 && k.points[0][1] === k.points[1][1]).map(k => String(k.points)))
+      for (const p of people) {
+        for (const s of p.spouses) {
+          const [a, b] = [pos.get(p.id)!, pos.get(s)!]
+          if (a.x >= b.x || a.y !== b.y || Math.abs(a.x - b.x) > 242.5) continue
+          expect(segs.has(String([[a.x + 105, a.y], [b.x - 105, b.y]])), `${p.id}–${s}`).toBe(true)
+        }
+      }
+    })
   }
+})
+
+describe('Mehrere Partner und kinderlose Paare', () => {
+  // Vater v: frühere Partnerin e mit Kind k, aktuelle Frau w ohne Kinder; Eltern g1+g2
+  const people: LayoutPerson[] = [
+    { id: 'g1', parents: [], spouses: ['g2'], children: ['v'] },
+    { id: 'g2', parents: [], spouses: ['g1'], children: ['v'] },
+    { id: 'v', parents: ['g1', 'g2'], spouses: ['e', 'w'], children: ['k'] },
+    { id: 'e', parents: [], spouses: ['v'], children: ['k'] },
+    { id: 'w', parents: [], spouses: ['v'], children: [] },
+    { id: 'k', parents: ['v', 'e'], spouses: [], children: [] },
+  ]
+  const l = layoutAll(people)
+  const pos = new Map(l.people.map(p => [p.id, p]))
+  const [v, e, w, k] = ['v', 'e', 'w', 'k'].map(id => pos.get(id)!)
+
+  it('stellt den Vater zwischen beide Partnerinnen', () => {
+    expect(new Set([v.y, e.y, w.y]).size).toBe(1)
+    expect(Math.abs(v.x - e.x)).toBeCloseTo(242, 0)
+    expect(Math.abs(v.x - w.x)).toBeCloseTo(242, 0)
+    expect(Math.sign(e.x - v.x)).toBe(-Math.sign(w.x - v.x))
+  })
+
+  it('zeichnet beide Ehelinien, auch die kinderlose', () => {
+    const marriage = (a: { x: number, y: number }, b: { x: number, y: number }) => {
+      const [l1, r1] = a.x < b.x ? [a, b] : [b, a]
+      return l.links.some(k2 => String(k2.points) === String([[l1.x + 105, l1.y], [r1.x - 105, r1.y]]))
+    }
+    expect(marriage(v, e)).toBe(true)
+    expect(marriage(v, w)).toBe(true)
+  })
+
+  it('hängt das Kind an die Verbindung mit der Mutter', () => {
+    const toChild = l.links.find(k2 => String(k2.points.at(-1)) === String([k.x, k.y - 32]))
+    expect(toChild).toBeDefined()
+    // Elternlinie der Familie beginnt mittig zwischen Vater und Mutter, nicht bei der aktuellen Frau
+    expect(l.links.some(k2 => String(k2.points[0]) === String([(v.x + e.x) / 2, v.y]))).toBe(true)
+    expect(l.links.some(k2 => k2.points[0][0] === (v.x + w.x) / 2 && k2.points.length > 2)).toBe(false)
+  })
+
+  it('stellt jede Verbindung über ihre eigenen Kinder (keine Kreuzung)', () => {
+    // wie oben, aber auch die aktuelle Frau hat Kinder; mehrere Kinder je Verbindung
+    const both: LayoutPerson[] = [
+      { id: 'g1', parents: [], spouses: ['g2'], children: ['v'] },
+      { id: 'g2', parents: [], spouses: ['g1'], children: ['v'] },
+      { id: 'v', parents: ['g1', 'g2'], spouses: ['e', 'w'], children: ['k1', 'k2', 'k3', 'j1', 'j2'] },
+      { id: 'e', parents: [], spouses: ['v'], children: ['k1', 'k2', 'k3'] },
+      { id: 'w', parents: [], spouses: ['v'], children: ['j1', 'j2'] },
+      ...['k1', 'k2', 'k3'].map(id => ({ id, parents: ['v', 'e'], spouses: [], children: [] })),
+      ...['j1', 'j2'].map(id => ({ id, parents: ['v', 'w'], spouses: [], children: [] })),
+    ]
+    const lb = layoutAll(both)
+    const x = new Map(lb.people.map(p => [p.id, p.x]))
+    const eLeft = x.get('e')! < x.get('w')!
+    const ks = ['k1', 'k2', 'k3'].map(id => x.get(id)!)
+    const js = ['j1', 'j2'].map(id => x.get(id)!)
+    // Kinder der linken Verbindung stehen links von denen der rechten
+    if (eLeft) expect(Math.max(...ks)).toBeLessThan(Math.min(...js))
+    else expect(Math.max(...js)).toBeLessThan(Math.min(...ks))
+  })
+
+  it('ordnet Ketten und Sterne von Partnern', () => {
+    const partners = (map: Record<string, string[]>) => (id: string) => map[id] ?? []
+    expect(arrangePartners(['b', 'a', 'c'], partners({ a: ['b'], b: ['a', 'c'], c: ['b'] }))).toEqual(['a', 'b', 'c'])
+    expect(arrangePartners(['m', 'x', 'y', 'z'], partners({ m: ['x', 'y', 'z'], x: ['m'], y: ['m'], z: ['m'] }))).toEqual(['x', 'm', 'y', 'z'])
+    // Ring aus vier Personen: keine sinnvolle Reihe
+    expect(arrangePartners(['a', 'b', 'c', 'd'], partners({ a: ['b', 'd'], b: ['a', 'c'], c: ['b', 'd'], d: ['c', 'a'] }))).toBeNull()
+  })
 })

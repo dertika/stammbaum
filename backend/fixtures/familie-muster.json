@@ -315,7 +315,8 @@
    "birth_ref_index": 0,
    "death_ref_index": 1,
    "family_list": [
-    "ff0004"
+    "ff0004",
+    "ff0010"
    ],
    "parent_family_list": [
     "ff0003"
@@ -365,7 +366,9 @@
    ],
    "birth_ref_index": 0,
    "death_ref_index": 1,
-   "family_list": [],
+   "family_list": [
+    "ff0011"
+   ],
    "parent_family_list": [
     "ff0003"
    ],
@@ -747,6 +750,101 @@
    "media_list": [],
    "note_list": [],
    "private": false
+  },
+  {
+   "handle": "pi0022",
+   "gramps_id": "I0022",
+   "gender": 0,
+   "primary_name": {
+    "first_name": "Gerda",
+    "surname_list": [
+     {
+      "surname": "Klein",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0022b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0022d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0010"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0023",
+   "gramps_id": "I0023",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Klaus",
+    "surname_list": [
+     {
+      "surname": "Muster",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0023b",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": -1,
+   "family_list": [],
+   "parent_family_list": [
+    "ff0010"
+   ],
+   "media_list": [],
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "pi0024",
+   "gramps_id": "I0024",
+   "gender": 1,
+   "primary_name": {
+    "first_name": "Otto",
+    "surname_list": [
+     {
+      "surname": "Brandt",
+      "primary": true
+     }
+    ]
+   },
+   "event_ref_list": [
+    {
+     "ref": "ei0024b",
+     "role": "Primary"
+    },
+    {
+     "ref": "ei0024d",
+     "role": "Primary"
+    }
+   ],
+   "birth_ref_index": 0,
+   "death_ref_index": 1,
+   "family_list": [
+    "ff0011"
+   ],
+   "parent_family_list": [],
+   "media_list": [],
+   "note_list": [],
+   "private": false
   }
  ],
  "families": [
@@ -903,6 +1001,36 @@
     }
    ],
    "event_ref_list": [],
+   "private": false
+  },
+  {
+   "handle": "ff0010",
+   "father_handle": "pi0008",
+   "mother_handle": "pi0022",
+   "child_ref_list": [
+    {
+     "ref": "pi0023"
+    }
+   ],
+   "event_ref_list": [
+    {
+     "ref": "ef0010m",
+     "role": "Family"
+    }
+   ],
+   "private": false
+  },
+  {
+   "handle": "ff0011",
+   "father_handle": "pi0024",
+   "mother_handle": "pi0009",
+   "child_ref_list": [],
+   "event_ref_list": [
+    {
+     "ref": "ef0011m",
+     "role": "Family"
+    }
+   ],
    "private": false
   }
  ],
@@ -1608,6 +1736,106 @@
    "private": false
   },
   {
+   "handle": "ei0022b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     11,
+     2,
+     1929,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 717661
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0022d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     4,
+     6,
+     1999,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 743818
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0023b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     20,
+     10,
+     1950,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 725730
+   },
+   "place": "plp5",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0024b",
+   "type": "Birth",
+   "date": {
+    "dateval": [
+     3,
+     3,
+     1928,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 717312
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ei0024d",
+   "type": "Death",
+   "date": {
+    "dateval": [
+     9,
+     9,
+     2001,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 744660
+   },
+   "place": "plp3",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
    "handle": "ef0001m",
    "type": "Marriage",
    "date": {
@@ -1741,6 +1969,46 @@
     "quality": 0,
     "text": "",
     "sortval": 737304
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0010m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1949,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 725028
+   },
+   "place": "",
+   "description": "",
+   "note_list": [],
+   "private": false
+  },
+  {
+   "handle": "ef0011m",
+   "type": "Marriage",
+   "date": {
+    "dateval": [
+     0,
+     0,
+     1955,
+     false
+    ],
+    "modifier": 0,
+    "quality": 0,
+    "text": "",
+    "sortval": 727260
    },
    "place": "",
    "description": "",

@@ -52,7 +52,9 @@
         {/each}
       </nav>
       <div class="actions">
-        <a class="btn primary" href={me.grampsEditUrl} target="_blank" rel="noopener">Stammbaum bearbeiten ↗</a>
+        {#if me.grampsEditUrl}
+          <a class="btn primary" href={me.grampsEditUrl} target="_blank" rel="noopener">Stammbaum bearbeiten ↗</a>
+        {/if}
         <a class="btn" href="/" target="_blank" rel="noopener">Ansicht öffnen</a>
         <button type="button" class="btn" onclick={logout} title="Angemeldet als {me.name}">Abmelden</button>
       </div>

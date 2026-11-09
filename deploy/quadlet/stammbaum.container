@@ -1,9 +1,9 @@
 # Rootless-Quadlet für das Stammbaum-Dashboard
-# Ablage: ~/.config/containers/systemd/stammbaum.container (Benutzer christian)
+# Ablage: ~/.config/containers/systemd/stammbaum.container
 # Danach: systemctl --user daemon-reload && systemctl --user start stammbaum
 
 [Unit]
-Description=Stammbaum-Dashboard (stammbaum.dertika.de)
+Description=Stammbaum-Dashboard (stammbaum.example.com)
 Wants=network-online.target
 After=network-online.target
 
@@ -21,15 +21,15 @@ PublishPort=127.0.0.1:8090:8080
 Volume=stammbaum-data.volume:/data
 
 Environment=TZ=Europe/Berlin
-Environment=PUBLIC_URL=https://stammbaum.dertika.de
+Environment=PUBLIC_URL=https://stammbaum.example.com
 # Gramps Web intern ansprechen (nicht über Proxy/Authelia); Port anpassen.
 # Alternativ gemeinsames Podman-Netz: Network=gramps.network und http://<gramps-container>:5000
 Environment=GRAMPS_API_URL=http://host.containers.internal:5000
 Environment=GRAMPS_USER=stammbaum-dashboard
-Environment=GRAMPS_EDIT_URL=https://stammbaum-admin.dertika.de
-Environment=OIDC_ISSUER=https://auth.dertika.de
+Environment=GRAMPS_EDIT_URL=https://gramps.example.com
+Environment=OIDC_ISSUER=https://auth.example.com
 Environment=OIDC_CLIENT_ID=stammbaum
-Environment=OIDC_ADMIN_GROUP=stammbaum-admins
+Environment=OIDC_ADMIN_GROUP=family-admins
 Environment=CACHE_TTL=900
 Environment=LIVING_YEARS=100
 # Environment=ROOT_PERSON=I0001

@@ -1,0 +1,143 @@
+# .forgejo/workflows/image.yml – Container-Image lokal auf srv-linux bauen (Forgejo Actions)
+# Vorlage: github.com/dertika/srv-linux → configs/forgejo/workflow-vorlage.yml
+# Doku:    docs/runbooks/forgejo.md („Neues Repo für lokale Builds freischalten“)
+#
+# - GitHub ignoriert den Ordner .forgejo; die GitHub-Workflows (.github/workflows) bleiben unberührt
+#   und laufen in Forgejo nicht, weil es .forgejo/workflows gibt.
+# - Zeitgesteuert statt "on: push": Ein Mirror-Sync löst nicht zuverlässig einen Push-Trigger aus.
+#   Jeder Lauf prüft zuerst, ob es das Image für den aktuellen Commit schon gibt, und endet dann
+#   nach wenigen Sekunden ohne Build.
+# - Der Commit wird bei jedem Lauf frisch über die API bestimmt (Kopf des Standard-Branches),
+#   nicht aus github.sha: Bei "schedule" ist das der Commit, als der Zeitplan angelegt wurde.
+# - Tags: <erste 12 Zeichen des Commits> und latest. Registry: git.dertika.de/<owner>/<repo>.
+# - Gebaut wird über den Podman-Socket des Hosts (podman --remote), das Image entsteht also unter
+#   christian auf srv-linux und wird nach dem Push dort wieder entfernt.
+name: Image
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+    inputs:
+      force:
+        description: 'Auch bauen, wenn es das Image für den Commit schon gibt'
+        type: boolean
+        default: false
+
+env:
+  REGISTRY: git.dertika.de
+  # Nur amd64. Multi-Arch nur, wenn ausdrücklich gewollt: "linux/amd64,linux/arm64".
+  # Dafür einmalig auf dem Host: sudo apt install qemu-user-static (arm64 wird emuliert,
+  # auf dem Celeron N3000 dauert ein Build dann ein Vielfaches).
+  PLATFORMS: linux/amd64
+  CONTAINERFILE: Containerfile
+  CONTEXT: .
+  # Podman-Socket des Hosts, vom Runner in den Job-Container eingehängt
+  CONTAINER_HOST: unix:///var/run/docker.sock
+
+defaults:
+  run:
+    shell: bash
+
+jobs:
+  image:
+    runs-on: podman
+    timeout-minutes: 60
+    steps:
+      - name: Schon gebaut?
+        id: check
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          API_TOKEN: ${{ github.token }}
+          SERVER: ${{ github.server_url }}
+          FORCE: ${{ github.event.inputs.force }}
+        run: |
+          set -euo pipefail
+          REPO=$(printf '%s' "$GITHUB_REPOSITORY" | tr '[:upper:]' '[:lower:]')
+          API="$SERVER/api/v1/repos/$GITHUB_REPOSITORY"
+          BRANCH=$(curl -fsS -H "Authorization: token $API_TOKEN" "$API" \
+                   | sed -n 's/.*"default_branch":"\([^"]*\)".*/\1/p')
+          SHA=$(curl -fsS -H "Authorization: token $API_TOKEN" "$API/branches/$BRANCH" \
+                | sed -n 's/.*"commit":{"id":"\([0-9a-f]\{40\}\)".*/\1/p')
+          [ -n "$SHA" ] || { echo "Commit von $BRANCH nicht ermittelbar"; exit 1; }
+          TAG=${SHA:0:12}
+          echo "Standard-Branch $BRANCH, Commit $SHA → $REGISTRY/$REPO:$TAG"
+          {
+            echo "repo=$REPO"
+            echo "branch=$BRANCH"
+            echo "sha=$SHA"
+            echo "tag=$TAG"
+          } >> "$GITHUB_OUTPUT"
+
+          if [ "${FORCE:-false}" = "true" ]; then
+            echo "Manuell erzwungen, es wird gebaut."
+            echo "skip=false" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          [ -n "$REGISTRY_USER" ] && [ -n "$REGISTRY_TOKEN" ] \
+            || { echo "Secrets REGISTRY_USER/REGISTRY_TOKEN fehlen (Organisation → Einstellungen → Actions → Secrets)"; exit 1; }
+          RT=$(curl -fsS -u "$REGISTRY_USER:$REGISTRY_TOKEN" \
+               "https://$REGISTRY/v2/token?service=container_registry&scope=repository:$REPO:pull" \
+               | sed -n 's/.*"token":"\([^"]*\)".*/\1/p')
+          CODE=$(curl -s -o /dev/null -w '%{http_code}' -I \
+                 -H "Authorization: Bearer $RT" \
+                 -H 'Accept: application/vnd.oci.image.index.v1+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.docker.distribution.manifest.v2+json' \
+                 "https://$REGISTRY/v2/$REPO/manifests/$TAG")
+          case "$CODE" in
+            200) echo "Image $REPO:$TAG gibt es schon, kein Build."; echo "skip=true" >> "$GITHUB_OUTPUT" ;;
+            404) echo "Image $REPO:$TAG fehlt, es wird gebaut."; echo "skip=false" >> "$GITHUB_OUTPUT" ;;
+            *)   echo "Registry antwortet $CODE (Anmeldung?), Abbruch."; exit 1 ;;
+          esac
+
+      - name: Quellcode holen
+        if: steps.check.outputs.skip != 'true'
+        env:
+          API_TOKEN: ${{ github.token }}
+          SERVER: ${{ github.server_url }}
+          BRANCH: ${{ steps.check.outputs.branch }}
+          SHA: ${{ steps.check.outputs.sha }}
+        run: |
+          set -euo pipefail
+          command -v git >/dev/null || dnf -y -q install --setopt=install_weak_deps=False git-core
+          rm -rf src && mkdir src && cd src
+          git init -q
+          AUTH=$(printf 'actions:%s' "$API_TOKEN" | base64 -w0)
+          git -c http.extraHeader="Authorization: Basic $AUTH" \
+              fetch -q --depth 50 "$SERVER/$GITHUB_REPOSITORY.git" "refs/heads/$BRANCH"
+          git checkout -q "$SHA"
+          git log -1 --format='%H %s'
+
+      - name: Bauen und hochladen
+        if: steps.check.outputs.skip != 'true'
+        env:
+          REGISTRY_USER: ${{ secrets.REGISTRY_USER }}
+          REGISTRY_TOKEN: ${{ secrets.REGISTRY_TOKEN }}
+          REPO: ${{ steps.check.outputs.repo }}
+          SHA: ${{ steps.check.outputs.sha }}
+          TAG: ${{ steps.check.outputs.tag }}
+          SERVER: ${{ github.server_url }}
+        run: |
+          set -euo pipefail
+          cd src
+          IMAGE="$REGISTRY/$REPO"
+          printf '%s' "$REGISTRY_TOKEN" | podman --remote login -u "$REGISTRY_USER" --password-stdin "$REGISTRY"
+          LABELS=(--label "org.opencontainers.image.revision=$SHA"
+                  --label "org.opencontainers.image.source=$SERVER/$GITHUB_REPOSITORY")
+          # --format docker: behält HEALTHCHECK aus dem Containerfile (im OCI-Format verwirft Podman ihn)
+          # Lokal nur der Commit-Tag (nie :latest, das könnte ein laufender Dienst benutzen);
+          # latest entsteht erst in der Registry.
+          if [[ "$PLATFORMS" == *,* ]]; then
+            podman --remote manifest rm "$IMAGE:$TAG" >/dev/null 2>&1 || true
+            podman --remote build --platform "$PLATFORMS" --manifest "$IMAGE:$TAG" --format docker "${LABELS[@]}" -f "$CONTAINERFILE" "$CONTEXT"
+            podman --remote manifest push --all "$IMAGE:$TAG" "docker://$IMAGE:$TAG"
+            podman --remote manifest push --all "$IMAGE:$TAG" "docker://$IMAGE:latest"
+            podman --remote manifest rm "$IMAGE:$TAG" || true
+          else
+            podman --remote build --platform "$PLATFORMS" -t "$IMAGE:$TAG" --format docker "${LABELS[@]}" -f "$CONTAINERFILE" "$CONTEXT"
+            podman --remote push "$IMAGE:$TAG" "docker://$IMAGE:$TAG"
+            podman --remote push "$IMAGE:$TAG" "docker://$IMAGE:latest"
+            podman --remote rmi "$IMAGE:$TAG" || true
+          fi
+          # Zwischenstufen des Builds aufräumen (nur Images ohne Namen)
+          podman --remote image prune -f >/dev/null || true
+          echo "Fertig: $IMAGE:$TAG und $IMAGE:latest"

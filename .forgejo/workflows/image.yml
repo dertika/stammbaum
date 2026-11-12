@@ -32,8 +32,9 @@ env:
   PLATFORMS: linux/amd64
   CONTAINERFILE: Containerfile
   CONTEXT: .
-  # Podman-Socket des Hosts, vom Runner in den Job-Container eingehängt
-  CONTAINER_HOST: unix:///var/run/docker.sock
+  # Podman-Socket des Hosts, vom Runner in den Job-Container eingehängt (der Pfad im Job hängt von
+  # der Runner-Version ab; "Bauen und hochladen" nimmt den ersten vorhandenen aus dieser Liste)
+  SOCKETS: /var/run/docker.sock /run/user/1000/podman/podman.sock
 
 defaults:
   run:
@@ -118,6 +119,9 @@ jobs:
           SERVER: ${{ github.server_url }}
         run: |
           set -euo pipefail
+          for S in $SOCKETS; do [ -S "$S" ] && export CONTAINER_HOST="unix://$S" && break; done
+          [ -n "${CONTAINER_HOST:-}" ] || { echo "Kein Podman-Socket im Job-Container ($SOCKETS)"; exit 1; }
+          echo "Podman über $CONTAINER_HOST: $(podman --remote version --format '{{.Server.Version}}')"
           cd src
           IMAGE="$REGISTRY/$REPO"
           printf '%s' "$REGISTRY_TOKEN" | podman --remote login -u "$REGISTRY_USER" --password-stdin "$REGISTRY"

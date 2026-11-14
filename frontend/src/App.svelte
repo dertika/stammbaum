@@ -7,6 +7,8 @@
   import PersonPanel from './lib/PersonPanel.svelte'
   import Presentation from './lib/Presentation.svelte'
   import PersonSearch from './lib/PersonSearch.svelte'
+  import { theme } from './lib/theme.svelte.ts'
+  import ThemeIcon from './lib/ThemeIcon.svelte'
   import FocusTree from './lib/FocusTree.svelte'
   import ExportDialog, { type ExportPayload } from './lib/export/ExportDialog.svelte'
   import { fullName } from './lib/format.ts'
@@ -249,6 +251,7 @@
         <button type="button" class="plain fit" aria-label="Ganzen Ausschnitt einpassen" onclick={() => view?.fit()}><span aria-hidden="true">⤢</span><span class="long">Einpassen</span></button>
         {/if}
         <button type="button" class="plain" aria-label="Als PDF speichern" title="Als PDF speichern" onclick={() => (exporting = true)}><span aria-hidden="true">⤓</span><span class="long">PDF</span></button>
+        <button type="button" class="plain theme" aria-label={theme.title} title={theme.title} onclick={() => theme.cycle()}><ThemeIcon mode={theme.mode} /><span class="long">{theme.label}</span></button>
         <div class="menu">
           {#if info?.presentations.length}
             <button type="button" class="plain present" aria-haspopup="menu" aria-expanded={menuOpen} onclick={() => (menuOpen = !menuOpen)}><span aria-hidden="true">▶</span><span class="long">Präsentation</span></button>
@@ -424,6 +427,10 @@
   .message h1 { font-size: 24px; margin-bottom: 8px; }
   .message p { color: var(--muted); max-width: 32em; }
 
+  /* Auf Handys folgt das Farbschema der Geräteeinstellung; spart eine Zeile Kopfleiste */
+  @media (max-width: 480px) {
+    button.theme { display: none; }
+  }
   @media (max-width: 640px) {
     header { padding: 8px 12px; }
     h1 { display: none; }

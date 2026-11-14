@@ -1,5 +1,7 @@
 import { mount } from 'svelte'
 import './app.css'
+// Farbschema vor dem ersten Rendern setzen, damit nichts aufblitzt
+import './lib/theme.svelte.ts'
 
 const target = document.getElementById('app')!
 

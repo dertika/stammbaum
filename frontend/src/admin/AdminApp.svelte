@@ -3,6 +3,8 @@
   import type { AdminInfo } from '../../../shared/types.ts'
   import './admin.css'
   import { admin } from './api.ts'
+  import { theme } from '../lib/theme.svelte.ts'
+  import ThemeIcon from '../lib/ThemeIcon.svelte'
   import DataPage from './DataPage.svelte'
   import DisplayPage from './DisplayPage.svelte'
   import LinksPage from './LinksPage.svelte'
@@ -56,6 +58,7 @@
           <a class="btn primary" href={me.grampsEditUrl} target="_blank" rel="noopener">Stammbaum bearbeiten ↗</a>
         {/if}
         <a class="btn" href="/" target="_blank" rel="noopener">Ansicht öffnen</a>
+        <button type="button" class="btn" aria-label={theme.title} title={theme.title} onclick={() => theme.cycle()}><ThemeIcon mode={theme.mode} /> {theme.label}</button>
         <button type="button" class="btn" onclick={logout} title="Angemeldet als {me.name}">Abmelden</button>
       </div>
     </header>

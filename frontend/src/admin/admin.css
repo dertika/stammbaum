@@ -22,7 +22,7 @@
 }
 .btn:hover { border-color: var(--accent); }
 .btn.primary { background: var(--accent); border-color: var(--accent); color: var(--surface); font-weight: 600; }
-.btn.danger { color: #b3261e; }
+.btn.danger { color: light-dark(#b3261e, #f2a29c); }
 .btn:disabled { opacity: 0.5; cursor: default; }
 .field { display: grid; gap: 4px; }
 .field > span { font-size: 13px; color: var(--muted); }
@@ -41,14 +41,8 @@
   background: var(--bg);
   color: var(--muted);
 }
-.badge.active { background: #d7f0dd; color: #1d6b34; }
-.badge.expired { background: #f6e7c8; color: #7a5208; }
-.badge.revoked { background: #f6d6d3; color: #8c1d18; }
-@media (prefers-color-scheme: dark) {
-  .badge.active { background: #1f3d29; color: #8fd8a5; }
-  .badge.expired { background: #43361b; color: #f0c674; }
-  .badge.revoked { background: #47201e; color: #f2a29c; }
-  .btn.danger { color: #f2a29c; }
-}
+.badge.active { background: light-dark(#d7f0dd, #1f3d29); color: light-dark(#1d6b34, #8fd8a5); }
+.badge.expired { background: light-dark(#f6e7c8, #43361b); color: light-dark(#7a5208, #f0c674); }
+.badge.revoked { background: light-dark(#f6d6d3, #47201e); color: light-dark(#8c1d18, #f2a29c); }
 .notice { padding: 10px 14px; border-radius: 8px; background: var(--bg); border: 1px solid var(--border); }
 .notice.error { border-color: #b3261e; }

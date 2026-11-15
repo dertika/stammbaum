@@ -4,19 +4,18 @@
 #
 # - GitHub ignoriert den Ordner .forgejo; die GitHub-Workflows (.github/workflows) bleiben unberührt
 #   und laufen in Forgejo nicht, weil es .forgejo/workflows gibt.
-# - Zeitgesteuert statt "on: push": Ein Mirror-Sync löst nicht zuverlässig einen Push-Trigger aus.
-#   Jeder Lauf prüft zuerst, ob es das Image für den aktuellen Commit schon gibt, und endet dann
-#   nach wenigen Sekunden ohne Build.
-# - Der Commit wird bei jedem Lauf frisch über die API bestimmt (Kopf des Standard-Branches),
-#   nicht aus github.sha: Bei "schedule" ist das der Commit, als der Zeitplan angelegt wurde.
+# - Kein "on: push" und kein Zeitplan: Ein Mirror-Sync löst nicht zuverlässig einen Push-Trigger aus,
+#   und ein Zeitplan erzeugte alle 15 Minuten einen leeren Lauf. Gestartet wird der Workflow von
+#   forgejo-builds auf dem Server (Timer alle 15 Minuten, ohne Container), und zwar nur, wenn es zum
+#   aktuellen Commit noch kein Image gibt. Von Hand: Actions → Image → Workflow ausführen.
+# - Jeder Lauf prüft trotzdem zuerst selbst, ob es das Image schon gibt (Schutz bei manuellem Start),
+#   und bestimmt den Commit frisch über die API (Kopf des Standard-Branches).
 # - Tags: <erste 12 Zeichen des Commits> und latest. Registry: git.dertika.de/<owner>/<repo>.
 # - Gebaut wird über den Podman-Socket des Hosts (podman --remote), das Image entsteht also unter
 #   christian auf srv-linux und wird nach dem Push dort wieder entfernt.
 name: Image
 
 on:
-  schedule:
-    - cron: '*/15 * * * *'
   workflow_dispatch:
     inputs:
       force:
